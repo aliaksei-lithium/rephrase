@@ -66,12 +66,13 @@ body {
     flex-direction: column;
     max-width: 1400px;
     width: calc(100% - 40px);
-    margin: 0 auto;
+    margin: 0 auto 40px auto;
     background: #ffffff;
     border-radius: 0 0 8px 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    height: calc(100vh - 100px);
-    min-height: 600px;
+    height: 33vh;
+    min-height: 500px;
+    max-height: 800px;
 }
 
 .top-bar {
@@ -81,6 +82,32 @@ body {
     padding: 16px 24px;
     border-bottom: 1px solid #e5e5e5;
     background: #ffffff;
+}
+
+.translate-header {
+    justify-content: flex-start;
+    gap: 12px;
+}
+
+.swap-btn {
+    background: none;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 18px;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 36px;
+}
+
+.swap-btn:hover {
+    background-color: #f0f0f0;
+    border-color: #999;
 }
 
 .language-select {
@@ -106,7 +133,8 @@ body {
     border-color: #0066cc;
 }
 
-.cleanup-btn {
+.cleanup-btn,
+.copy-btn {
     position: absolute;
     top: 8px;
     right: 8px;
@@ -122,7 +150,8 @@ body {
     transition: background-color 0.2s;
 }
 
-.cleanup-btn:hover {
+.cleanup-btn:hover,
+.copy-btn:hover {
     background-color: #f0f0f0;
     color: #333;
 }
@@ -148,6 +177,7 @@ body {
     flex-direction: column;
     border-right: 1px solid #e5e5e5;
     overflow: hidden;
+    position: relative;
 }
 
 .config-section {
@@ -203,7 +233,8 @@ body {
     font-weight: 500;
     color: #333;
     white-space: nowrap;
-    min-width: 90px;
+    width: 90px;
+    flex-shrink: 0;
 }
 
 .config-select {
@@ -219,6 +250,7 @@ body {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 6px center;
+    min-width: 0;
 }
 
 .config-select:hover {
@@ -314,7 +346,10 @@ body {
 
     .container {
         width: calc(100% - 20px);
-        height: calc(100vh - 80px);
+        height: 33vh;
+        min-height: 400px;
+        max-height: 600px;
+        margin-bottom: 20px;
     }
 
     .error-toolbox {

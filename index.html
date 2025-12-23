@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rephrase Tool</title>
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -12,10 +14,24 @@
         <button class="menu-item" data-mode="translate">Translate</button>
     </nav>
     <div class="container">
-        <header class="top-bar">
+        <header class="top-bar" id="rephraseHeader">
             <select id="languageSelect" class="language-select">
                 <option value="en">English</option>
                 <option value="de">German</option>
+            </select>
+        </header>
+        <header class="top-bar translate-header" id="translateHeader" style="display: none;">
+            <select id="sourceLangSelect" class="language-select">
+                <option value="">Detect language</option>
+                <option value="EN">English</option>
+                <option value="DE">Deutsch</option>
+                <option value="RU">Russian</option>
+            </select>
+            <button id="swapLangBtn" class="swap-btn" aria-label="Swap languages">⇄</button>
+            <select id="targetLangSelect" class="language-select">
+                <option value="EN">English</option>
+                <option value="DE">Deutsch</option>
+                <option value="RU" selected>Russian</option>
             </select>
         </header>
         <main class="main-content">
@@ -29,9 +45,10 @@
                 ></textarea>
             </section>
             <section class="output-section">
+                <button id="copyBtn" class="copy-btn" aria-label="Copy to clipboard">📋</button>
                 <div id="outputText" class="text-area output-area"></div>
             </section>
-            <section class="config-section">
+            <section class="config-section" id="configSection">
                 <div class="config-group">
                     <label for="writingStyle">Writing style</label>
                     <select id="writingStyle" class="config-select">
