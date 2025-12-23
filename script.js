@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const usageInfo = document.getElementById('usageInfo');
 
     let debounceTimer = null;
-    const DEBOUNCE_DELAY = 400;
+    const DEBOUNCE_DELAY = 1500;
 
     let currentMode = 'rephrase';
 

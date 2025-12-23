@@ -166,6 +166,8 @@ body {
     flex: 1;
     display: flex;
     flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
     border-right: 1px solid #e5e5e5;
     overflow: hidden;
     position: relative;
@@ -378,9 +380,9 @@ body {
 
     .container {
         width: calc(100% - 20px);
-        height: 33vh;
-        min-height: 400px;
-        max-height: 600px;
+        height: auto;
+        min-height: 70vh;
+        max-height: none;
         margin-bottom: 20px;
     }
 
@@ -391,17 +393,71 @@ body {
 
     .main-content {
         flex-direction: column;
+        height: auto;
     }
     
     .input-section,
-    .output-section,
-    .config-section {
+    .output-section {
         border-right: none;
         border-bottom: 1px solid #e5e5e5;
-        max-height: 33vh;
+        min-height: 200px;
+        max-height: none;
+        flex: 0 1 auto;
+        justify-content: flex-start;
+        align-items: flex-start;
     }
     
     .config-section {
+        border-right: none;
         border-bottom: none;
+        width: 100%;
+        min-height: auto;
+        max-height: none;
+        padding: 16px;
+        overflow: visible;
+    }
+
+    .text-area {
+        padding: 16px;
+        padding-right: 40px;
+        font-size: 16px;
+        min-height: 126px;
+        height: auto;
+    }
+
+    #inputText {
+        height: calc(1.6em * 10 + 32px);
+        min-height: calc(1.6em * 10 + 32px);
+        max-height: calc(1.6em * 10 + 32px);
+        resize: none;
+    }
+
+    .config-group {
+        margin-bottom: 12px;
+    }
+
+    .config-note,
+    .usage-info {
+        margin-top: 12px;
+        padding: 10px 12px;
+        font-size: 11px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+    }
+
+    .top-bar {
+        padding: 12px 16px;
+    }
+
+    .translate-header {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .swap-btn {
+        min-width: 36px;
+        height: 32px;
+        padding: 6px 10px;
     }
 }
