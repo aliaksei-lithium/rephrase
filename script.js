@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const rephraseHeader = document.getElementById('rephraseHeader');
     const translateHeader = document.getElementById('translateHeader');
     const configSection = document.getElementById('configSection');
+    const usageInfo = document.getElementById('usageInfo');
 
     let debounceTimer = null;
     const DEBOUNCE_DELAY = 400;
@@ -45,6 +46,33 @@ document.addEventListener('DOMContentLoaded', () => {
     function hideError() {
         errorToolbox.classList.remove('visible');
         errorToolboxContent.textContent = '';
+    }
+
+    function highlightDiff(original, rephrased) {
+        if (!window.Diff || original === rephrased) {
+            return rephrased;
+        }
+
+        const diff = Diff.diffWords(original, rephrased, {
+            ignoreWhitespace: false,
+            ignoreCase: false
+        });
+
+        let html = '';
+        diff.forEach(part => {
+            if (part.added) {
+                html += `<span class="diff-added">${escapeHtml(part.value)}</span>`;
+            } else if (!part.removed) {
+                html += escapeHtml(part.value);
+            }
+        });
+        return html;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
 
     function switchMode(mode) {
@@ -124,7 +152,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            outputText.textContent = data.rephrased_text || data.text || 'No rephrasing available.';
+            const rephrasedText = data.rephrased_text || data.text || 'No rephrasing available.';
+            const originalText = inputText.value.trim();
+            
+            if (rephrasedText && originalText && window.Diff) {
+                outputText.innerHTML = highlightDiff(originalText, rephrasedText);
+            } else {
+                outputText.textContent = rephrasedText;
+            }
             outputText.classList.remove('loading');
         } catch (error) {
             showError({
@@ -186,7 +221,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            outputText.textContent = data.translated_text || data.text || 'No translation available.';
+            const translatedText = data.translated_text || data.text || 'No translation available.';
+            outputText.textContent = translatedText;
             outputText.classList.remove('loading');
         } catch (error) {
             showError({
@@ -271,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cleanupBtn.addEventListener('click', () => {
         inputText.value = '';
         outputText.textContent = '';
+        outputText.innerHTML = '';
         outputText.classList.remove('loading');
         hideError();
     });
@@ -307,4 +344,41 @@ document.addEventListener('DOMContentLoaded', () => {
             switchMode(mode);
         });
     });
+
+    async function fetchUsage() {
+        try {
+            const response = await fetch('/api/usage');
+            if (!response.ok) {
+                usageInfo.innerHTML = '<div class="usage-loading">Unable to load usage</div>';
+                return;
+            }
+
+            const data = await response.json();
+            
+            const writeProduct = data.products?.find(p => p.product_type === 'write') || {};
+            const translateProduct = data.products?.find(p => p.product_type === 'translate') || {};
+            
+            const writeUsage = writeProduct.api_key_character_count || 0;
+            const writeMax = data.api_key_character_limit || 0;
+            const writePercentage = writeMax > 0 ? Math.round((writeUsage / writeMax) * 100) : 0;
+            
+            const translateUsage = translateProduct.api_key_character_count || 0;
+            const translateMax = data.api_key_character_limit || 0;
+            const translatePercentage = translateMax > 0 ? Math.round((translateUsage / translateMax) * 100) : 0;
+            
+            const startDate = data.start_time ? new Date(data.start_time).toLocaleDateString() : '';
+            const endDate = data.end_time ? new Date(data.end_time).toLocaleDateString() : '';
+            const billingPeriod = startDate && endDate ? `${startDate} - ${endDate}` : '';
+
+            usageInfo.innerHTML = `
+                <div class="usage-item"><strong>Write:</strong> ${writeUsage.toLocaleString()} (${writePercentage}%), max ${writeMax.toLocaleString()}</div>
+                <div class="usage-item"><strong>Translate:</strong> ${translateUsage.toLocaleString()} (${translatePercentage}%), max ${translateMax.toLocaleString()}</div>
+                ${billingPeriod ? `<div class="usage-item"><strong>Billing period:</strong> ${billingPeriod}</div>` : ''}
+            `;
+        } catch (error) {
+            usageInfo.innerHTML = '<div class="usage-loading">Unable to load usage</div>';
+        }
+    }
+
+    fetchUsage();
 });
