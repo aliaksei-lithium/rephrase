@@ -7,20 +7,72 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <nav class="menu">
+        <button class="menu-item active" data-mode="rephrase">Rephrase</button>
+        <button class="menu-item" data-mode="translate">Translate</button>
+    </nav>
     <div class="container">
-        <header>
-            <h1>Rephrase Tool</h1>
-            <p>Hello World - Cloudflare Pages</p>
+        <header class="top-bar">
+            <select id="languageSelect" class="language-select">
+                <option value="en">English</option>
+                <option value="de">German</option>
+            </select>
         </header>
-        <main>
-            <div class="content">
-                <p>Your app is ready for deployment!</p>
-                <button id="testBtn">Test API</button>
-                <div id="result"></div>
-            </div>
+        <main class="main-content">
+            <section class="input-section">
+                <button id="cleanupBtn" class="cleanup-btn" aria-label="Clear all">×</button>
+                <textarea 
+                    id="inputText" 
+                    class="text-area" 
+                    placeholder="Enter text to rephrase..."
+                    rows="20"
+                ></textarea>
+            </section>
+            <section class="output-section">
+                <div id="outputText" class="text-area output-area"></div>
+            </section>
+            <section class="config-section">
+                <div class="config-group">
+                    <label for="writingStyle">Writing style</label>
+                    <select id="writingStyle" class="config-select">
+                        <option value="default">Default</option>
+                        <option value="academic">Academic</option>
+                        <option value="business">Business</option>
+                        <option value="casual">Casual</option>
+                        <option value="simple">Simple</option>
+                        <option value="prefer_academic">Prefer Academic</option>
+                        <option value="prefer_business">Prefer Business</option>
+                        <option value="prefer_casual" selected>Prefer Casual</option>
+                        <option value="prefer_simple">Prefer Simple</option>
+                    </select>
+                </div>
+                <div class="config-group">
+                    <label for="tone">Tone</label>
+                    <select id="tone" class="config-select">
+                        <option value="default" selected>Default</option>
+                        <option value="confident">Confident</option>
+                        <option value="diplomatic">Diplomatic</option>
+                        <option value="enthusiastic">Enthusiastic</option>
+                        <option value="friendly">Friendly</option>
+                        <option value="prefer_confident">Prefer Confident</option>
+                        <option value="prefer_diplomatic">Prefer Diplomatic</option>
+                        <option value="prefer_enthusiastic">Prefer Enthusiastic</option>
+                        <option value="prefer_friendly">Prefer Friendly</option>
+                    </select>
+                </div>
+                <div class="config-note">
+                    Note: Only one of writing style or tone can be used at a time.
+                </div>
+            </section>
         </main>
+    </div>
+    <div id="errorToolbox" class="error-toolbox">
+        <div class="error-toolbox-header">
+            <span class="error-toolbox-title">Error Details</span>
+            <button id="closeToolboxBtn" class="close-toolbox-btn" aria-label="Close">×</button>
+        </div>
+        <div id="errorToolboxContent" class="error-toolbox-content"></div>
     </div>
     <script src="script.js"></script>
 </body>
 </html>
-

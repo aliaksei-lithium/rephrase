@@ -32,4 +32,11 @@ yarn-error.log*
 
 # Cloudflare/Wrangler
 .wrangler/
+.dev.vars
+
+# Test files
+test-*.js
+
+# API Documentation
+deepl_openapi.yaml
 
