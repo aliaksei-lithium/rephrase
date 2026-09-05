@@ -1,3 +1,19 @@
 name = 'calm-hat-f6c5'
 compatibility_date = "2025-12-23"
 pages_build_output_dir = "."
+
+# Non-secret defaults. Secrets (ANTHROPIC_API_KEY, APP_PASSWORD, AUTH_SECRET, AI_GATEWAY_TOKEN)
+# are set in the Pages dashboard or with `wrangler pages secret put`, and locally in local.env / .env.local.
+[vars]
+ANTHROPIC_MODEL = "claude-sonnet-5"
+SESSION_DAYS = "180"
+# ANTHROPIC_BASE_URL = "https://gateway.ai.cloudflare.com/v1/<ACCOUNT_ID>/<GATEWAY>/anthropic"
+
+# Workers AI binding for the free Gemma model and as a fallback when Anthropic is unavailable.
+# Declared per environment so plain `wrangler pages dev` does not need a remote session;
+# use `npm run dev:free` (adds --ai AI) to test it locally.
+[env.production.ai]
+binding = "AI"
+
+[env.preview.ai]
+binding = "AI"

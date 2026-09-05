@@ -3,103 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Rephrase and translate text with AI-powered writing assistance.">
+    <meta name="description" content="Fix and lightly rephrase messages while keeping your own voice and formatting.">
     <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
     <meta name="googlebot" content="noindex, nofollow">
     <meta name="bingbot" content="noindex, nofollow">
     <title>Rephrase Tool</title>
     <meta property="og:title" content="Rephrase Tool">
-    <meta property="og:description" content="Rephrase and translate text with AI-powered writing assistance.">
+    <meta property="og:description" content="Fix and lightly rephrase messages while keeping your own voice and formatting.">
     <meta property="og:type" content="website">
     <meta property="og:image" content="https://rephrase-eey.pages.dev/preview.jpg">
     <meta property="og:url" content="https://rephrase-eey.pages.dev/">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Rephrase Tool">
-    <meta name="twitter:description" content="Rephrase and translate text with AI-powered writing assistance.">
+    <meta name="twitter:description" content="Fix and lightly rephrase messages while keeping your own voice and formatting.">
     <meta name="twitter:image" content="https://rephrase-eey.pages.dev/preview.jpg">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/diff@5.1.0/dist/diff.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsdiff/5.2.0/diff.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/turndown/7.2.0/turndown.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/15.0.12/marked.min.js"></script>
 </head>
 <body>
-    <nav class="menu">
-        <button class="menu-item active" data-mode="rephrase">Rephrase</button>
-        <button class="menu-item" data-mode="translate">Translate</button>
-    </nav>
     <div class="container">
-        <header class="top-bar" id="rephraseHeader">
-            <select id="languageSelect" class="language-select">
-                <option value="en">English</option>
-                <option value="de">German</option>
-            </select>
-        </header>
-        <header class="top-bar translate-header" id="translateHeader" style="display: none;">
-            <select id="sourceLangSelect" class="language-select">
-                <option value="">Detect language</option>
-                <option value="EN">English</option>
-                <option value="DE">Deutsch</option>
-                <option value="RU">Russian</option>
-            </select>
-            <button id="swapLangBtn" class="swap-btn" aria-label="Swap languages">⇄</button>
-            <select id="targetLangSelect" class="language-select">
-                <option value="EN">English</option>
-                <option value="DE">Deutsch</option>
-                <option value="RU" selected>Russian</option>
-            </select>
+        <header class="top-bar">
+            <div class="brand">Rephrase</div>
+            <div class="top-bar-right">
+                <label class="model-label" for="modelSelect">Model</label>
+                <select id="modelSelect" class="language-select" aria-label="Model"></select>
+                <button id="logoutBtn" class="link-btn" type="button" hidden>Sign out</button>
+            </div>
         </header>
         <main class="main-content">
             <section class="input-section">
-                <button id="cleanupBtn" class="cleanup-btn" aria-label="Clear all">×</button>
-                <textarea 
-                    id="inputText" 
-                    class="text-area" 
-                    placeholder="Enter text to rephrase..."
-                    rows="20"
-                ></textarea>
+                <button id="cleanupBtn" class="cleanup-btn" aria-label="Clear all" title="Clear">×</button>
+                <div
+                    id="inputText"
+                    class="text-area editor"
+                    contenteditable="true"
+                    role="textbox"
+                    aria-multiline="true"
+                    aria-label="Text to rephrase"
+                    data-placeholder="Paste or type text to rephrase. Formatting from Slack is kept. Cmd/Ctrl+Enter to run."
+                ></div>
             </section>
             <section class="output-section">
-                <button id="copyBtn" class="copy-btn" aria-label="Copy to clipboard">📋</button>
-                <div id="outputText" class="text-area output-area"></div>
+                <div class="output-actions">
+                    <button id="copyMdBtn" class="copy-btn small" aria-label="Copy as Markdown" title="Copy as Markdown">MD</button>
+                    <button id="copyBtn" class="copy-btn" aria-label="Copy to clipboard" title="Copy with formatting">📋</button>
+                </div>
+                <div id="outputText" class="text-area output-area" aria-live="polite"></div>
             </section>
             <section class="config-section" id="configSection">
                 <div class="config-group">
-                    <label for="writingStyle">Writing style</label>
-                    <select id="writingStyle" class="config-select">
-                        <option value="default">Default</option>
-                        <option value="academic">Academic</option>
-                        <option value="business">Business</option>
+                    <label>Mode</label>
+                    <div class="segmented" id="modeGroup" role="radiogroup" aria-label="Mode">
+                        <button type="button" class="seg-btn" data-mode="simple" title="Fix typos, grammar, tense, word order and wrong words only">Simple</button>
+                        <button type="button" class="seg-btn active" data-mode="default" title="Light rephrase, same voice">Default</button>
+                    </div>
+                </div>
+                <div class="config-group">
+                    <label for="styleSelect">Style</label>
+                    <select id="styleSelect" class="config-select">
+                        <option value="keep" selected>Keep mine</option>
                         <option value="casual">Casual</option>
-                        <option value="simple">Simple</option>
-                        <option value="prefer_academic">Prefer Academic</option>
-                        <option value="prefer_business">Prefer Business</option>
-                        <option value="prefer_casual" selected>Prefer Casual</option>
-                        <option value="prefer_simple">Prefer Simple</option>
+                        <option value="business">Business</option>
+                        <option value="academic">Academic</option>
                     </select>
                 </div>
                 <div class="config-group">
-                    <label for="tone">Tone</label>
-                    <select id="tone" class="config-select">
-                        <option value="default" selected>Default</option>
+                    <label for="toneSelect">Tone</label>
+                    <select id="toneSelect" class="config-select">
+                        <option value="keep" selected>Keep mine</option>
+                        <option value="friendly">Friendly</option>
                         <option value="confident">Confident</option>
                         <option value="diplomatic">Diplomatic</option>
                         <option value="enthusiastic">Enthusiastic</option>
-                        <option value="friendly">Friendly</option>
-                        <option value="prefer_confident">Prefer Confident</option>
-                        <option value="prefer_diplomatic">Prefer Diplomatic</option>
-                        <option value="prefer_enthusiastic">Prefer Enthusiastic</option>
-                        <option value="prefer_friendly">Prefer Friendly</option>
                     </select>
                 </div>
-                <div class="config-note">
-                    Note: Only one of writing style or tone can be used at a time.
+                <button id="rephraseBtn" class="primary-btn" type="button">Rephrase <span class="kbd">⌘↵</span></button>
+                <div class="config-toggles">
+                    <label class="toggle"><input type="checkbox" id="showDiff" checked> Show changes</label>
+                    <label class="toggle"><input type="checkbox" id="autoRun"> Auto-run while typing</label>
                 </div>
-                <div id="usageInfo" class="usage-info">
-                    <div class="usage-loading">Loading usage...</div>
+                <div id="statusInfo" class="usage-info">
+                    <div class="usage-loading">Ready.</div>
                 </div>
             </section>
         </main>
     </div>
+
     <div id="errorToolbox" class="error-toolbox">
         <div class="error-toolbox-header">
             <span class="error-toolbox-title">Error Details</span>
@@ -107,6 +101,18 @@
         </div>
         <div id="errorToolboxContent" class="error-toolbox-content"></div>
     </div>
+
+    <div id="loginOverlay" class="login-overlay" hidden>
+        <form id="loginForm" class="login-card" autocomplete="on">
+            <h1>Rephrase</h1>
+            <p>Enter the password to continue. You stay signed in on this device.</p>
+            <input id="passwordInput" type="password" name="password" autocomplete="current-password" placeholder="Password" required>
+            <button type="submit" class="primary-btn" id="loginBtn">Sign in</button>
+            <div id="loginError" class="login-error" role="alert"></div>
+        </form>
+    </div>
+
+    <script src="editor.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

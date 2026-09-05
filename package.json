@@ -1,0 +1,16 @@
+{
+  "name": "rephrase",
+  "private": true,
+  "version": "2.0.0",
+  "description": "Rephrase tool: Claude-powered copy editing on Cloudflare Pages",
+  "scripts": {
+    "dev": "wrangler pages dev . --port 8788",
+    "dev:free": "wrangler pages dev . --port 8788 --ai AI",
+    "test:api": "node test-rephrase.js",
+    "deploy": "wrangler pages deploy ."
+  },
+  "devDependencies": {
+    "wrangler": "^4.129.0"
+  },
+  "type": "module"
+}

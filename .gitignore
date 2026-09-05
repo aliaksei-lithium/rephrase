@@ -34,9 +34,13 @@ yarn-error.log*
 .wrangler/
 .dev.vars
 
-# Test files
-test-*.js
 
-# API Documentation
-deepl_openapi.yaml
 
+
+# Local secrets (never commit)
+local.env
+*.env
+!.env.example
+
+# Claude Code local config
+.claude/
