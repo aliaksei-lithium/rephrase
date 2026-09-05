@@ -287,8 +287,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            setProgress(100);
             const finalMd = cleanModelOutput(streamed);
+            if (!finalMd) {
+                showError({ message: 'The model returned no text.', model: usedModel, usage: done?.usage || null });
+                outputText.textContent = 'Error: the model returned no text. Try again or pick another model.';
+                outputText.classList.remove('loading');
+                setStatus('Failed.', 'warn');
+                return;
+            }
+            setProgress(100);
             const html = renderOutput(finalMd, originalPlain);
             finished = true;
             setTimeout(() => setProgress(null), 250);

@@ -162,7 +162,8 @@ export async function* workersAiStream({ env, model, system, user, signal }) {
                 { role: 'user', content: user },
             ],
             stream: true,
-            max_tokens: 4096,
+            // Reasoning models spend most of this on thinking before the answer.
+            max_tokens: 8192,
         }, { signal });
     } catch (e) {
         throw new UpstreamError(`Workers AI error: ${e.message}`, { retryable: true });

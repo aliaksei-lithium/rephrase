@@ -53,7 +53,9 @@ export async function onRequestPost(context) {
     if (!wantStream) {
         try {
             const result = await collect(run, { env, model, system, user, signal: request.signal });
-            return json({ text: cleanOutput(result.text), model: model.id, provider: model.provider, usage: result.usage });
+            const text = cleanOutput(result.text);
+            if (!text) return json({ error: 'The model returned no text. Try again or pick another model.', usage: result.usage }, 502);
+            return json({ text, model: model.id, provider: model.provider, usage: result.usage });
         } catch (e) {
             return upstreamErrorResponse(e);
         }
@@ -75,6 +77,7 @@ export async function onRequestPost(context) {
                             emitted = true;
                             await send(ev);
                         } else if (ev.type === 'done') {
+                            if (!emitted) throw new UpstreamError('The model returned no text. Try again or pick another model.', { status: 502, retryable: true });
                             await send({ type: 'done', model: usedModel.id, provider: usedModel.provider, usage: ev.usage, stop_reason: ev.stop_reason });
                         }
                     }
