@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const showDiff = document.getElementById('showDiff');
     const autoRun = document.getElementById('autoRun');
     const statusInfo = document.getElementById('statusInfo');
+    const progressBar = document.getElementById('progressBar');
+    const progressFill = document.getElementById('progressFill');
     const logoutBtn = document.getElementById('logoutBtn');
     const errorToolbox = document.getElementById('errorToolbox');
     const errorToolboxContent = document.getElementById('errorToolboxContent');
@@ -185,10 +187,21 @@ document.addEventListener('DOMContentLoaded', () => {
         return `$${v.toFixed(3)}`;
     }
 
+    // The answer length is unknown up front; assume it is about the input length.
+    function setProgress(pct) {
+        if (pct === null) {
+            progressBar.hidden = true;
+            progressFill.style.width = '0';
+            return;
+        }
+        progressBar.hidden = false;
+        progressFill.style.width = `${Math.max(3, Math.min(100, pct))}%`;
+    }
+
     function renderOutput(markdown, originalPlain) {
         const html = E.markdownToHtml(markdown);
         outputText.innerHTML = html;
-        outputText.classList.remove('loading', 'streaming');
+        outputText.classList.remove('loading');
         if (state.showDiff) E.applyDiffMarks(outputText, originalPlain);
         return html;
     }
@@ -198,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const originalPlain = E.editorPlainText(inputText);
         if (!markdown.trim()) {
             outputText.textContent = '';
-            outputText.classList.remove('loading', 'streaming');
+            outputText.classList.remove('loading');
             hideError();
             return;
         }
@@ -207,14 +220,17 @@ document.addEventListener('DOMContentLoaded', () => {
         inFlight = controller;
 
         outputText.textContent = '';
-        outputText.classList.add('loading', 'streaming');
+        outputText.classList.add('loading');
         rephraseBtn.disabled = true;
         hideError();
         setStatus(`Rephrasing with ${modelById.get(state.model)?.label || state.model}…`);
+        setProgress(3);
+        const expectedChars = Math.max(markdown.length, 40);
 
         let streamed = '';
         let usedModel = state.model;
         let info = null;
+        let finished = false;
         try {
             const res = await api('/api/rephrase', {
                 method: 'POST',
@@ -226,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const errorData = await res.json().catch(() => ({ status: res.status, statusText: res.statusText }));
                 showError({ status: res.status, ...errorData });
                 outputText.textContent = `Error: ${errorData.error || `HTTP ${res.status}`}`;
-                outputText.classList.remove('loading', 'streaming');
+                outputText.classList.remove('loading');
                 setStatus('Failed.', 'warn');
                 return;
             }
@@ -253,7 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     if (ev.type === 'delta') {
                         streamed += ev.text;
-                        outputText.textContent = streamed;
+                        setProgress(5 + (streamed.length / expectedChars) * 88);
                     } else if (ev.type === 'info') {
                         info = ev.message;
                         usedModel = ev.model;
@@ -264,15 +280,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (ev.type === 'error') {
                         showError(ev);
                         outputText.textContent = `Error: ${ev.message}`;
-                        outputText.classList.remove('loading', 'streaming');
+                        outputText.classList.remove('loading');
                         setStatus('Failed.', 'warn');
                         return;
                     }
                 }
             }
 
+            setProgress(100);
             const finalMd = cleanModelOutput(streamed);
             const html = renderOutput(finalMd, originalPlain);
+            finished = true;
+            setTimeout(() => setProgress(null), 250);
             lastResult = { markdown: finalMd, html, originalPlain, model: usedModel, usage: done?.usage || null };
 
             const cost = estimateCost(usedModel, done?.usage);
@@ -287,16 +306,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (error.name === 'AbortError') return;
             if (error.unauthorized) {
                 outputText.textContent = '';
-                outputText.classList.remove('loading', 'streaming');
+                outputText.classList.remove('loading');
                 return;
             }
             showError({ error: error.name, message: error.message });
             outputText.textContent = `Error: ${error.message}`;
-            outputText.classList.remove('loading', 'streaming');
+            outputText.classList.remove('loading');
             setStatus('Failed.', 'warn');
         } finally {
             if (inFlight === controller) inFlight = null;
             rephraseBtn.disabled = false;
+            if (!finished) setProgress(null);
         }
     }
 
@@ -357,9 +377,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (inFlight) inFlight.abort();
         inputText.innerHTML = '';
         outputText.innerHTML = '';
-        outputText.classList.remove('loading', 'streaming');
+        outputText.classList.remove('loading');
         lastResult = null;
         hideError();
+        setProgress(null);
         setStatus('Ready.');
         inputText.focus();
     });

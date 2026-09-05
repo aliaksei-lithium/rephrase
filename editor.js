@@ -70,7 +70,7 @@
     marked.use({ gfm: true, breaks: true });
 
     function markdownToHtml(md) {
-        return sanitizeHtml(marked.parse(md || ''));
+        return sanitizeHtml(marked.parse(md || '')).trim();
     }
 
     // Insert pasted content as sanitised HTML (or text) at the caret.

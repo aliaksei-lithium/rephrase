@@ -207,8 +207,25 @@ body {
     padding-right: 96px;
 }
 
-.output-area.streaming {
-    white-space: pre-wrap;
+.progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #e9eef5;
+    z-index: 11;
+}
+
+.progress[hidden] {
+    display: none;
+}
+
+.progress-fill {
+    height: 100%;
+    width: 0;
+    background: #0066cc;
+    transition: width 0.25s ease;
 }
 
 .output-area.loading:empty::before {

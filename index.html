@@ -45,10 +45,11 @@
                     role="textbox"
                     aria-multiline="true"
                     aria-label="Text to rephrase"
-                    data-placeholder="Paste or type text to rephrase. Formatting from Slack is kept. Cmd/Ctrl+Enter to run."
+                    data-placeholder="Paste or type text to rephrase. Formatted text keeps its formatting. Cmd/Ctrl+Enter to run."
                 ></div>
             </section>
             <section class="output-section">
+                <div id="progressBar" class="progress" hidden><div id="progressFill" class="progress-fill"></div></div>
                 <div class="output-actions">
                     <button id="copyMdBtn" class="copy-btn small" aria-label="Copy as Markdown" title="Copy as Markdown">MD</button>
                     <button id="copyBtn" class="copy-btn" aria-label="Copy to clipboard" title="Copy with formatting">📋</button>

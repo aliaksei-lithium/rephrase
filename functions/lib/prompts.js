@@ -10,7 +10,7 @@ Rules that apply to every edit:
 - The input is Markdown. Keep the Markdown exactly as given: bold, italics, strikethrough, inline code, fenced code blocks, links, block quotes, bullet and numbered lists, line breaks, and paragraph breaks. Keep backslash escapes as they are.
 - Never change the text inside inline code, code blocks, URLs, link targets, @mentions, #channels, :emoji: codes, or emoji characters.
 - Keep names, product names, ticket ids like ABC-123, numbers, dates, times, and abbreviations unchanged.
-- Keep the author's habits when they are clearly deliberate: lowercase-only writing, missing final period in chat, "..." pauses.
+- The result must look properly written: sentences start with a capital letter, "I" is capitalised, proper nouns keep their capitalisation, sentences end with a period or question mark, commas and apostrophes are where they belong, spacing around punctuation is correct. A deliberate "..." pause or a smiley may stay.
 - If the input is already correct, return it unchanged.
 - Output only the edited text. No preface, no explanation, no notes, no quotation marks around it, and no code fence around the whole answer.
 
@@ -22,10 +22,10 @@ const MODE_PROMPTS = {
 - grammar: verb tense, subject-verb agreement, articles (a / an / the), prepositions, singular and plural forms
 - word order that is wrong in this language
 - a word that is clearly the wrong word, for example "actual" used to mean "current", "eventually" used to mean "possibly", "become" used to mean "get"
-- punctuation that is missing or wrong in a way that hurts readability
-Do not rephrase sentences that are already correct, even if they could be nicer. Do not change word choice for style. Do not merge or split sentences. Keep every sentence in the same place with the same structure. When in doubt, leave it.`,
+- punctuation and capitalisation: add missing commas, periods, question marks and apostrophes, remove wrong ones, fix spacing, capitalise sentence starts and "I", split a run-on sentence with proper punctuation
+Do not rephrase sentences that are already correct, even if they could be nicer. Do not change word choice for style. Do not merge sentences or reorder them. Keep every sentence in the same place with the same structure. When in doubt about wording, leave it; when in doubt about punctuation, make it correct.`,
 
-    default: `Task: light edit. Fix everything a proofreader would fix (spelling, grammar, tense, articles, prepositions, word order, clearly wrong words, punctuation), and also:
+    default: `Task: light edit. Fix everything a proofreader would fix (spelling, grammar, tense, articles, prepositions, word order, clearly wrong words, punctuation, capitalisation), and also:
 - replace awkward or non-idiomatic phrasing with the natural way a native speaker says the same thing
 - simplify clumsy constructions
 - make unclear references clear
