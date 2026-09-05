@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modelSelect = document.getElementById('modelSelect');
     const styleSelect = document.getElementById('styleSelect');
     const toneSelect = document.getElementById('toneSelect');
+    const languageSelect = document.getElementById('languageSelect');
     const modeGroup = document.getElementById('modeGroup');
     const rephraseBtn = document.getElementById('rephraseBtn');
     const cleanupBtn = document.getElementById('cleanupBtn');
@@ -33,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mode: 'default',
         style: 'keep',
         tone: 'keep',
+        language: 'auto',
         model: null,
         showDiff: true,
         autoRun: false,
@@ -63,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function applyPrefsToUi() {
         styleSelect.value = state.style;
         toneSelect.value = state.tone;
+        languageSelect.value = state.language;
         showDiff.checked = state.showDiff;
         autoRun.checked = state.autoRun;
         modeGroup.querySelectorAll('.seg-btn').forEach((b) => b.classList.toggle('active', b.dataset.mode === state.mode));
@@ -235,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await api('/api/rephrase', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: markdown, mode: state.mode, style: state.style, tone: state.tone, model: state.model, stream: true }),
+                body: JSON.stringify({ text: markdown, mode: state.mode, style: state.style, tone: state.tone, language: state.language, model: state.model, stream: true }),
                 signal: controller.signal,
             });
             if (!res.ok) {
@@ -364,6 +367,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     toneSelect.addEventListener('change', () => {
         state.tone = toneSelect.value;
+        savePrefs();
+    });
+    languageSelect.addEventListener('change', () => {
+        state.language = languageSelect.value;
         savePrefs();
     });
     modelSelect.addEventListener('change', () => {

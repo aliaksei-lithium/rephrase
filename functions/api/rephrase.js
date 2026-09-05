@@ -1,6 +1,6 @@
 import { error, json } from '../lib/http.js';
 import { availableModels, DEFAULT_MODEL_ID, findModel } from '../lib/models.js';
-import { buildSystemPrompt, cleanOutput, MODES, STYLES, TONES, wrapText } from '../lib/prompts.js';
+import { buildSystemPrompt, cleanOutput, LANGUAGES, MODES, STYLES, TONES, wrapText } from '../lib/prompts.js';
 import { streamFor, UpstreamError } from '../lib/providers.js';
 
 const MAX_CHARS = 12_000;
@@ -16,6 +16,7 @@ function pick(value, allowed, fallback) {
  *   mode   "simple" | "default"
  *   style  "keep" | "casual" | "business" | "academic"
  *   tone   "keep" | "friendly" | "confident" | "diplomatic" | "enthusiastic"
+ *   language "auto" | "en" | "de"   output language (auto keeps the input language)
  *   model  one of /api/models ids
  *   stream true (default) -> text/event-stream of {type:"delta"|"done"|"error"|"info"}
  *          false -> JSON { text, model, provider, usage }
@@ -37,13 +38,14 @@ export async function onRequestPost(context) {
     const mode = pick(body.mode, MODES, 'default');
     const style = pick(body.style, STYLES, 'keep');
     const tone = pick(body.tone, TONES, 'keep');
+    const language = pick(body.language, LANGUAGES, 'auto');
 
     const available = availableModels(env);
     if (!available.length) return error('No AI provider is configured (set ANTHROPIC_API_KEY or the AI binding)', 500);
     const requestedId = body.model || env.ANTHROPIC_MODEL || DEFAULT_MODEL_ID;
     const model = available.some((m) => m.id === requestedId) ? findModel(requestedId) : findModel(available[0].id);
 
-    const system = buildSystemPrompt({ mode, style, tone });
+    const system = buildSystemPrompt({ mode, style, tone, language });
     const user = wrapText(text);
     const wantStream = body.stream !== false;
 

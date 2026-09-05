@@ -7,6 +7,7 @@ A small web app that fixes or lightly rephrases messages with Claude while keepi
 - **Simple** mode: fixes typos, grammar, tense, articles, word order and clearly wrong words. Nothing else.
 - **Default** mode: light, idiomatic rephrase that keeps sentence order, length and personality.
 - Optional style (casual, business, academic) and tone (friendly, confident, diplomatic, enthusiastic).
+- Language: Auto keeps the input language; English or German forces the output language (and translates if the input is in the other one) with language-specific writing rules.
 - Rich-text input: paste from Slack, Gmail, Docs. Output keeps the formatting; changed words are underlined.
 - Copy back with formatting (HTML + plain text) or as Markdown.
 - Model picker: Claude Sonnet 5 (default), Opus 5, Haiku 4.5, or the free Gemma model on Workers AI.
@@ -58,7 +59,7 @@ All routes live under `/api`. Everything except `/api/auth/*` needs a session: e
 | `/api/auth/logout` | POST | clears the cookie |
 | `/api/auth/me` | GET | `{ authenticated, configured, expires_at }` |
 | `/api/models` | GET | `{ models: [{ id, label, hint, provider, price }], default, modes, styles, tones }` |
-| `/api/rephrase` | POST | `{ text (Markdown), mode, style, tone, model, stream }` |
+| `/api/rephrase` | POST | `{ text (Markdown), mode, style, tone, language (auto/en/de), model, stream }` |
 
 With `stream: true` (default) the response is `text/event-stream` with `data:` JSON lines of type `delta`, `info`, `done` (carries `model`, `usage`) or `error`. With `stream: false` it returns `{ text, model, provider, usage }`.
 
