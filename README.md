@@ -1,6 +1,9 @@
 # Rephrase Tool
 
-A small web app that fixes or lightly rephrases messages with Claude while keeping your own voice and your formatting (bold, lists, code, links pasted from Slack). Runs on Cloudflare Pages with Pages Functions. Live at https://rephrase-eey.pages.dev/.
+A small web app that fixes or lightly rephrases messages with Claude while keeping your own voice and your formatting (bold, lists, code, links pasted from Slack). Runs on Cloudflare Pages with Pages Functions.
+Live at https://rephrase-eey.pages.dev/.
+
+<img width="1457" height="672" alt="image" src="https://github.com/user-attachments/assets/9ff6af32-7860-4bdf-88a1-94afdca480bc" />
 
 ## Features
 
@@ -13,23 +16,6 @@ A small web app that fixes or lightly rephrases messages with Claude while keepi
 - Model picker: Claude Sonnet 5 (default), Opus 5, Haiku 4.5, or the free Gemma model on Workers AI.
 - Password login with a long-lived session cookie. The same token works as a Bearer header for scripts or a desktop app.
 - Streams the answer as it is generated. Shows tokens and an estimated cost per request.
-
-## Configuration
-
-Secrets and variables, set in the Pages project (Settings > Variables and secrets) or with `wrangler pages secret put NAME --project-name calm-hat-f6c5`:
-
-| Name | Required | Purpose |
-| --- | --- | --- |
-| `APP_PASSWORD` | yes | Login password. Changing it signs everyone out unless `AUTH_SECRET` is set. |
-| `ANTHROPIC_API_KEY` | yes for Claude | Anthropic Console API key (`anthropic_key` is accepted too). |
-| `ANTHROPIC_WORKSPACE_ID` | sometimes | Needed when the key is an organization-level key and the API answers "not scoped to a workspace". |
-| `AUTH_SECRET` | no | Separate signing secret for session tokens. |
-| `SESSION_DAYS` | no | Session length, default 180. |
-| `ANTHROPIC_MODEL` | no | Default model id, default `claude-sonnet-5`. |
-| `ANTHROPIC_BASE_URL` | no | Set to `https://gateway.ai.cloudflare.com/v1/<ACCOUNT_ID>/<GATEWAY>/anthropic` to route through Cloudflare AI Gateway (logs, caching, rate limits, spend caps). |
-| `AI_GATEWAY_TOKEN` | no | Token for an authenticated gateway. With a gateway BYOK key stored under the `default` alias you can omit `ANTHROPIC_API_KEY`. |
-
-The Workers AI binding `AI` is declared in `wrangler.toml` for the production and preview environments. It powers the free Gemma model and is the fallback when Anthropic returns a retryable error.
 
 ## Local development
 
@@ -60,12 +46,6 @@ All routes live under `/api`. Everything except `/api/auth/*` needs a session: e
 | `/api/auth/me` | GET | `{ authenticated, configured, expires_at }` |
 | `/api/models` | GET | `{ models: [{ id, label, hint, provider, price }], default, modes, styles, tones }` |
 | `/api/rephrase` | POST | `{ text (Markdown), mode, style, tone, language (auto/en/de), model, stream }` |
-
-With `stream: true` (default) the response is `text/event-stream` with `data:` JSON lines of type `delta`, `info`, `done` (carries `model`, `usage`) or `error`. With `stream: false` it returns `{ text, model, provider, usage }`.
-
-## Deployment
-
-The GitHub integration deploys every push to `main`. Do not set a build command; Pages serves the static files and bundles `functions/` itself. `wrangler.toml` is the source of truth for bindings and variables.
 
 ## Prompts
 
