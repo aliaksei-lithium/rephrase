@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
         outputText.classList.add('loading');
         rephraseBtn.disabled = true;
         hideError();
-        setStatus(`Rephrasing with ${modelById.get(state.model)?.label || state.model}…`);
+        setStatus(`${state.mode === 'rewrite' ? 'Rewriting' : 'Rephrasing'} with ${modelById.get(state.model)?.label || state.model}…`);
         setProgress(3);
         const expectedChars = Math.max(markdown.length, 40);
 
@@ -335,7 +335,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const fence = out.match(/^```[a-z]*\n([\s\S]*?)\n```$/i);
         if (fence) out = fence[1].trim();
         out = out.replace(/^<text>\s*/i, '').replace(/\s*<\/text>$/i, '');
-        return out.trim();
+        return out.trim()
+            .replace(/(\d)\s*[\u2013\u2014]\s*(\d)/g, '$1-$2')
+            .replace(/[ \t]*[\u2013\u2014][ \t]*/g, ' - ');
     }
 
     // ---------- events ----------
@@ -353,6 +355,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     rephraseBtn.addEventListener('click', rephraseText);
+
+    // ---------- formatting toolbar ----------
+    const toolbar = document.getElementById('toolbar');
+    function refreshToolbar() {
+        const active = E.activeFormats(inputText);
+        toolbar.querySelectorAll('button').forEach((b) => b.classList.toggle('active', !!active[b.dataset.cmd]));
+    }
+    // Keep the editor selection when a toolbar button is pressed.
+    toolbar.addEventListener('mousedown', (ev) => ev.preventDefault());
+    toolbar.addEventListener('click', (ev) => {
+        const btn = ev.target.closest('button[data-cmd]');
+        if (!btn) return;
+        E.format(inputText, btn.dataset.cmd);
+        refreshToolbar();
+    });
+    document.addEventListener('selectionchange', refreshToolbar);
+    inputText.addEventListener('keydown', (ev) => {
+        if ((ev.metaKey || ev.ctrlKey) && !ev.shiftKey && !ev.altKey && ev.key.toLowerCase() === 'k') {
+            ev.preventDefault();
+            E.format(inputText, 'link');
+        }
+    });
 
     modeGroup.addEventListener('click', (ev) => {
         const btn = ev.target.closest('.seg-btn');

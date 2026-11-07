@@ -179,7 +179,97 @@
         await navigator.clipboard.writeText(plain);
     }
 
+    function selectionInside(el) {
+        const sel = window.getSelection();
+        return sel.rangeCount > 0 && el.contains(sel.anchorNode);
+    }
+
+    function closestInEditor(el, selector) {
+        const sel = window.getSelection();
+        let node = sel.anchorNode;
+        if (node && node.nodeType === 3) node = node.parentNode;
+        const found = node && node.closest ? node.closest(selector) : null;
+        return found && el.contains(found) ? found : null;
+    }
+
+    // Apply a toolbar command to the editor selection.
+    function format(el, cmd) {
+        el.focus();
+        if (!selectionInside(el)) {
+            const range = document.createRange();
+            range.selectNodeContents(el);
+            range.collapse(false);
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        }
+        const sel = window.getSelection();
+        switch (cmd) {
+            case 'code': {
+                const code = closestInEditor(el, 'code');
+                if (code) {
+                    code.replaceWith(...code.childNodes);
+                } else if (!sel.isCollapsed) {
+                    const text = sel.toString();
+                    document.execCommand('insertHTML', false, '<code>' + text.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</code>');
+                }
+                break;
+            }
+            case 'link': {
+                const a = closestInEditor(el, 'a');
+                if (a) {
+                    document.execCommand('unlink');
+                    break;
+                }
+                if (sel.isCollapsed) break;
+                const url = window.prompt('Link URL');
+                if (url && url.trim()) document.execCommand('createLink', false, url.trim());
+                break;
+            }
+            case 'quote':
+                document.execCommand('formatBlock', false, closestInEditor(el, 'blockquote') ? 'div' : 'blockquote');
+                break;
+            case 'clear': {
+                if (sel.isCollapsed) document.execCommand('selectAll');
+                document.execCommand('removeFormat');
+                document.execCommand('unlink');
+                // removeFormat leaves <code>, lists and quotes; flatten them to plain lines.
+                const range = sel.rangeCount ? sel.getRangeAt(0) : null;
+                el.querySelectorAll('code, pre, h1, h2, h3, h4').forEach((n) => {
+                    if (!range || range.intersectsNode(n)) n.replaceWith(...n.childNodes);
+                });
+                break;
+            }
+            default:
+                document.execCommand(cmd);
+        }
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function activeFormats(el) {
+        if (!selectionInside(el)) return {};
+        const q = (c) => {
+            try {
+                return document.queryCommandState(c);
+            } catch {
+                return false;
+            }
+        };
+        return {
+            bold: q('bold'),
+            italic: q('italic'),
+            strikeThrough: q('strikeThrough'),
+            insertUnorderedList: q('insertUnorderedList'),
+            insertOrderedList: q('insertOrderedList'),
+            code: !!closestInEditor(el, 'code'),
+            link: !!closestInEditor(el, 'a'),
+            quote: !!closestInEditor(el, 'blockquote'),
+        };
+    }
+
     window.RephraseEditor = {
+        format,
+        activeFormats,
         sanitizeHtml,
         editorToMarkdown,
         editorPlainText,

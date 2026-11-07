@@ -629,3 +629,44 @@ body {
         margin-top: 12px;
     }
 }
+
+.toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    align-items: center;
+    padding: 6px 48px 6px 12px;
+    border-bottom: 1px solid #e5e5e5;
+    background: #fafafa;
+}
+
+.toolbar button {
+    border: none;
+    background: none;
+    color: #444;
+    font-size: 13px;
+    padding: 5px 8px;
+    min-width: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.toolbar button:hover {
+    background: #e8e8e8;
+}
+
+.toolbar button.active {
+    background: #dce9f8;
+    color: #0050a0;
+}
+
+.toolbar code {
+    font-size: 12px;
+}
+
+.toolbar-sep {
+    width: 1px;
+    height: 18px;
+    background: #d8d8d8;
+    margin: 0 4px;
+}

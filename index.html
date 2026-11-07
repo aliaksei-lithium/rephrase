@@ -37,6 +37,19 @@
         </header>
         <main class="main-content">
             <section class="input-section">
+                <div class="toolbar" id="toolbar" role="toolbar" aria-label="Formatting">
+                    <button type="button" data-cmd="bold" title="Bold (Cmd/Ctrl+B)"><b>B</b></button>
+                    <button type="button" data-cmd="italic" title="Italic (Cmd/Ctrl+I)"><i>I</i></button>
+                    <button type="button" data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
+                    <button type="button" data-cmd="code" title="Inline code"><code>&lt;/&gt;</code></button>
+                    <button type="button" data-cmd="link" title="Link (Cmd/Ctrl+K)">Link</button>
+                    <span class="toolbar-sep"></span>
+                    <button type="button" data-cmd="insertUnorderedList" title="Bullet list">• List</button>
+                    <button type="button" data-cmd="insertOrderedList" title="Numbered list">1. List</button>
+                    <button type="button" data-cmd="quote" title="Quote">&ldquo; Quote</button>
+                    <span class="toolbar-sep"></span>
+                    <button type="button" data-cmd="clear" title="Remove all formatting from the selection (or everything if nothing is selected)">Clear format</button>
+                </div>
                 <button id="cleanupBtn" class="cleanup-btn" aria-label="Clear all" title="Clear">×</button>
                 <div
                     id="inputText"
@@ -70,6 +83,7 @@
                     <div class="segmented" id="modeGroup" role="radiogroup" aria-label="Mode">
                         <button type="button" class="seg-btn" data-mode="simple" title="Fix typos, grammar, tense, word order and wrong words only">Simple</button>
                         <button type="button" class="seg-btn active" data-mode="default" title="Light rephrase, same voice">Default</button>
+                        <button type="button" class="seg-btn" data-mode="rewrite" title="Say it again in different, more natural words, same meaning">Rewrite</button>
                     </div>
                 </div>
                 <div class="config-group">

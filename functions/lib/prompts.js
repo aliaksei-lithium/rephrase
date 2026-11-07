@@ -1,4 +1,4 @@
-export const MODES = ['simple', 'default'];
+export const MODES = ['simple', 'default', 'rewrite'];
 export const STYLES = ['keep', 'casual', 'business', 'academic'];
 export const TONES = ['keep', 'friendly', 'confident', 'diplomatic', 'enthusiastic'];
 export const LANGUAGES = ['auto', 'en', 'de'];
@@ -13,6 +13,7 @@ Rules that apply to every edit:
 - Never change the text inside inline code, code blocks, URLs, link targets, @mentions, #channels, :emoji: codes, or emoji characters.
 - Keep names, product names, ticket ids like ABC-123, numbers, dates, times, and abbreviations unchanged.
 - The result must look properly written: sentences start with a capital letter, "I" is capitalised, proper nouns keep their capitalisation, sentences end with a period or question mark, commas and apostrophes are where they belong, spacing around punctuation is correct. A deliberate "..." pause or a smiley may stay.
+- Never use long dashes (the em dash "—" or the en dash "–"). Use a plain hyphen "-" instead, with spaces around it when it separates parts of a sentence, or rewrite the sentence with a comma or period. This applies to every output.
 - If the input is already correct, return it unchanged.
 - Output only the edited text. No preface, no explanation, no notes, no quotation marks around it, and no code fence around the whole answer.
 
@@ -38,6 +39,12 @@ Do not rephrase sentences that are already correct, even if they could be nicer.
 - simplify clumsy constructions
 - make unclear references clear
 Keep the author's sentence order, paragraph structure, length (within about ten percent), vocabulary level, and personality. Prefer the smallest change that makes a sentence read naturally. Unless a register or tone target is given below, do not make it more formal, more polished, or more enthusiastic than the original was trying to be.`,
+
+    rewrite: `Task: rewrite. Say the same thing in different, more natural words, the way a fluent native speaker would write it from scratch. Fix all errors too (spelling, grammar, punctuation, capitalisation). You may:
+- replace words and phrases with other words and phrases
+- restructure sentences, split long ones, merge short choppy ones, and change the order inside a sentence
+- drop filler that adds nothing
+Keep exactly: the meaning, every fact and detail, the speaker's intent, the paragraph and list structure, and roughly the same length (within about a quarter). Do not copy the original wording where a natural alternative exists. Unless a register or tone target is given below, keep the original level of formality and directness. The result must read as something a person would naturally write, not as a paraphrasing tool's output.`,
 };
 
 const STYLE_PROMPTS = {
@@ -80,5 +87,12 @@ export function cleanOutput(raw) {
     const fence = out.match(/^```[a-z]*\n([\s\S]*?)\n```$/i);
     if (fence) out = fence[1].trim();
     out = out.replace(/^<text>\s*/i, '').replace(/\s*<\/text>$/i, '');
-    return out.trim();
+    return normalizeDashes(out.trim());
+}
+
+// Models sometimes emit long dashes despite the prompt; use plain hyphens.
+export function normalizeDashes(text) {
+    return String(text)
+        .replace(/(\d)\s*[\u2013\u2014]\s*(\d)/g, '$1-$2')
+        .replace(/[ \t]*[\u2013\u2014][ \t]*/g, ' - ');
 }
