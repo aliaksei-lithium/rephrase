@@ -332,7 +332,8 @@ body {
 
 .seg-btn {
     flex: 1;
-    padding: 8px 10px;
+    padding: 8px 6px;
+    white-space: nowrap;
     border: none;
     background: #fff;
     color: #555;
