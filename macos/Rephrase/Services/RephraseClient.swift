@@ -18,7 +18,37 @@ struct RephraseClient {
         try await send("api/models")
     }
 
-    private func send<T: Decodable>(_ path: String, method: String = "GET", body: [String: String]? = nil, authorized: Bool = true) async throws -> T {
+    /// Streams the rewrite. Cancelling the consuming task closes the connection.
+    func rephrase(_ body: RephraseRequest) -> AsyncThrowingStream<RephraseEvent, Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    var request = try makeRequest("api/rephrase", method: "POST", body: body)
+                    request.timeoutInterval = 120
+                    request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+
+                    let (bytes, response) = try await session.bytes(for: request)
+                    let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                    guard (200..<300).contains(status) else {
+                        var data = Data()
+                        for try await byte in bytes { data.append(byte) }
+                        throw APIError.from(status: status, data: data)
+                    }
+                    for try await line in bytes.lines {
+                        guard let event = SSEParser.event(from: line) else { continue }
+                        if case .failure(let message) = event { throw APIError.message(message) }
+                        continuation.yield(event)
+                    }
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
+    private func makeRequest(_ path: String, method: String, body: (some Encodable)?, authorized: Bool = true) throws -> URLRequest {
         var request = URLRequest(url: baseURL.appending(path: path))
         request.httpMethod = method
         request.timeoutInterval = 30
@@ -30,7 +60,11 @@ struct RephraseClient {
         if authorized, let token {
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
+        return request
+    }
 
+    private func send<T: Decodable>(_ path: String, method: String = "GET", body: [String: String]? = nil, authorized: Bool = true) async throws -> T {
+        let request = try makeRequest(path, method: method, body: body, authorized: authorized)
         let (data, response) = try await session.data(for: request)
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard (200..<300).contains(status) else {
@@ -51,6 +85,27 @@ struct RephraseClient {
         }
         return decoder
     }()
+}
+
+/// POST /api/rephrase body. Selections from other apps are plain text.
+struct RephraseRequest: Encodable, Equatable {
+    var text: String
+    var mode: String
+    var style: String
+    var tone: String
+    var language: String
+    var model: String?
+    var format = "plain"
+    var stream = true
+
+    init(text: String, options: RephraseOptions, model: String?) {
+        self.text = text
+        mode = options.mode
+        style = options.style
+        tone = options.tone
+        language = options.language
+        self.model = model
+    }
 }
 
 struct LoginResponse: Decodable {

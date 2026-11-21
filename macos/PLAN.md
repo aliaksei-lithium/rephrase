@@ -1,6 +1,6 @@
 # Rephrase for macOS: Plan
 
-Status: written 2026-11-21. Phases 1 and 2 and the repo housekeeping (section 7) are done; next is Phase 3. Target: macOS 26 (Tahoe) and later, built with Xcode 27, Swift 6.2.
+Status: written 2026-11-21. Phases 1 to 3 and the repo housekeeping (section 7) are done; Phase 3 still needs the manual test matrix. Next is Phase 4. Target: macOS 26 (Tahoe) and later, built with Xcode 27, Swift 6.2.
 
 ## 1. What it does
 
@@ -139,5 +139,7 @@ TextEdit, Notes, Mail, Pages, Safari textarea and contenteditable, Chrome, Slack
 - Phase 1: `/api/rephrase` accepts `format: "plain"`; `/api/models` lists `formats`. Smoke test case added.
 - Section 7: site files moved to `public/`, `pages_build_output_dir = "public"`, npm scripts updated.
 - Phase 2: XcodeGen project (`project.yml`), menu bar app, Settings (server, sign in/out, defaults, shortcut recorders), token in the login Keychain, catalog from `/api/models`. The shortcut names are defined, but nothing handles them until Phase 3.
-- Tests: decoding, error mapping, Keychain round trip, and an opt-in live sign-in test.
+- Phase 3: ⌃⌥C reads the selection (`SelectionReader`: AX, `AXManualAccessibility` for Electron, ⌘C fallback with clipboard restore), opens a non-activating Liquid Glass popup next to it (`PopupPanel`, `PopupView`), streams the rewrite (`RephraseClient.rephrase`, `SSEParser`), re-runs when mode, style, tone, or language change, and replaces by pasting (`TextReplacer`). Without the Accessibility permission the shortcut opens the system prompt; the menu also offers it.
+- Tests: decoding, error mapping, Keychain round trip, SSE parsing, output cleanup, popup state with a stubbed stream, and opt-in live sign-in and streaming tests.
+- Not verified yet: the hotkey-to-paste flow in real apps (needs the Accessibility permission granted by hand) and the glass rendering on screen.
 - Signing is still ad-hoc (`CODE_SIGN_IDENTITY: "-"`). Install an Apple Development certificate and set `DEVELOPMENT_TEAM` before Phase 3, or the Accessibility permission resets on every build.

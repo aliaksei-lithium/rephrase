@@ -2,7 +2,15 @@ import SwiftUI
 
 @main
 struct RephraseApp: App {
-    @State private var model = AppModel()
+    @State private var model: AppModel
+    private let rewriter: RewriteController
+
+    init() {
+        let model = AppModel()
+        _model = State(initialValue: model)
+        rewriter = RewriteController(app: model)
+        rewriter.registerHotkeys()
+    }
 
     var body: some Scene {
         MenuBarExtra("Rephrase", systemImage: "wand.and.sparkles") {
@@ -23,6 +31,12 @@ private struct MenuContent: View {
 
     var body: some View {
         Text(model.statusText)
+
+        if !AXIsProcessTrusted() {
+            Button("Allow Accessibility Access…") {
+                SelectionReader.requestTrust()
+            }
+        }
 
         Divider()
 

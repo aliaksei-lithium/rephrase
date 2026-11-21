@@ -23,6 +23,26 @@ struct IntegrationTests {
         #expect(!catalog.models.isEmpty)
         #expect(catalog.formats?.contains("plain") == true)
     }
+
+    /// Set TEST_RUNNER_REPHRASE_MODEL to pick a model (for example the free Workers AI one locally).
+    @Test(.enabled(if: env["REPHRASE_BASE_URL"] != nil && env["APP_PASSWORD"] != nil))
+    func streamsPlainRewrite() async throws {
+        let base = try #require(URL(string: Self.env["REPHRASE_BASE_URL"]!))
+        let login = try await RephraseClient(baseURL: base, token: nil).login(password: Self.env["APP_PASSWORD"]!)
+        let client = RephraseClient(baseURL: base, token: login.token)
+
+        var options = RephraseOptions()
+        options.mode = "simple"
+        let request = RephraseRequest(text: "i has send the file_v2.txt yesterday", options: options, model: Self.env["REPHRASE_MODEL"])
+        var text = ""
+        var finished = false
+        for try await event in client.rephrase(request) {
+            if case .delta(let chunk) = event { text += chunk }
+            if case .done = event { finished = true }
+        }
+        #expect(finished)
+        #expect(OutputCleaner.clean(text).contains("file_v2.txt"))
+    }
 }
 
 struct KeychainStoreTests {
