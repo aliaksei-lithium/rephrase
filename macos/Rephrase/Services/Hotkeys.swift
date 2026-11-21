@@ -6,4 +6,5 @@ import KeyboardShortcuts
 extension KeyboardShortcuts.Name {
     static let rewriteWithPopup = Self("rewriteWithPopup", default: .init(.c, modifiers: [.control, .option]))
     static let rewriteInPlace = Self("rewriteInPlace", default: .init(.x, modifiers: [.control, .option]))
+    static let translate = Self("translate", default: .init(.z, modifiers: [.control, .option]))
 }

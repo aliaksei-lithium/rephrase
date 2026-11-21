@@ -22,6 +22,9 @@ final class RewriteController {
         KeyboardShortcuts.onKeyUp(for: .rewriteInPlace) { [weak self] in
             Task { await self?.rewriteInPlace() }
         }
+        KeyboardShortcuts.onKeyUp(for: .translate) { [weak self] in
+            Task { await self?.translate() }
+        }
     }
 
     // MARK: ⌃⌥C
@@ -73,6 +76,77 @@ final class RewriteController {
             options: app.options,
             model: app.effectiveModel,
             catalog: app.catalog,
+            makeClient: { [app] in try app.client() }
+        )
+        model.onClose = { [weak popup] in popup?.close() }
+        model.onError = { [app] error in app.handleRequestError(error) }
+        return model
+    }
+
+    // MARK: ⌃⌥Z
+
+    /// Translates the selection into the default language (Google detects the source) in a popup.
+    /// Enter replaces the selection, ⌘C copies. Pressing the shortcut again closes it.
+    func translate() async {
+        if popup.isVisible {
+            popup.close()
+            return
+        }
+        cancelQuick()
+        guard let selection = await readSelection(report: { [popup] message, bounds in
+            popup.show(.message(message), near: bounds)
+        }) else { return }
+        if let reason = translateUnavailableReason {
+            popup.show(.message(reason), near: selection.bounds)
+            return
+        }
+
+        let model = makeTranslateModel(text: selection.text)
+        if selection.canPaste {
+            model.onReplace = { [weak self] text in
+                Task { await self?.paste(text, into: selection, closing: { self?.popup.close() }) }
+            }
+        } else {
+            model.copyOnlyReason = "Terminals are copy-only."
+        }
+        popup.show(model, near: selection.bounds)
+        model.run()
+    }
+
+    /// Menu bar fallback: translate what is on the clipboard.
+    func translateClipboard() async {
+        cancelQuick()
+        popup.close()
+        let text = NSPasteboard.general.string(forType: .string) ?? ""
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            popup.show(.message("The clipboard has no text."), near: nil)
+            return
+        }
+        guard case .signedIn = app.auth else {
+            popup.show(.message(Self.signInMessage), near: nil)
+            return
+        }
+        if let reason = translateUnavailableReason {
+            popup.show(.message(reason), near: nil)
+            return
+        }
+        let model = makeTranslateModel(text: text)
+        model.copyOnlyReason = "From the clipboard: copy the result."
+        popup.show(model, near: nil)
+        model.run()
+    }
+
+    private var translateUnavailableReason: String? {
+        if app.isDemo { return "Translation isn't part of the demo. Sign in with the password to use it." }
+        if !app.canTranslate { return "Translation isn't set up on \(app.host): the server needs a Google Translate API key." }
+        return nil
+    }
+
+    private func makeTranslateModel(text: String) -> TranslateModel {
+        let model = TranslateModel(
+            original: text,
+            options: app.translateOptions,
+            languages: app.translateLanguages,
             makeClient: { [app] in try app.client() }
         )
         model.onClose = { [weak popup] in popup?.close() }
