@@ -50,7 +50,7 @@ struct PopupView: View {
                 .fixedSize(horizontal: false, vertical: true)
         default:
             ScrollView {
-                Text(model.result.isEmpty ? " " : model.result)
+                Text(model.highlighted ?? AttributedString(model.result.isEmpty ? " " : model.result))
                     .font(.body)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -114,6 +114,8 @@ struct PopupView: View {
                 Text(note).font(.caption).foregroundStyle(.secondary).lineLimit(1)
             } else if model.isUnchanged {
                 Text("Already looks good").font(.caption).foregroundStyle(.secondary)
+            } else if let reason = model.copyOnlyReason, model.phase == .done {
+                Text(reason).font(.caption).foregroundStyle(.secondary).lineLimit(2)
             } else if case .failed(let message) = model.phase, !model.result.isEmpty {
                 Text(message).font(.caption).foregroundStyle(.red).lineLimit(2)
             }
@@ -125,10 +127,12 @@ struct PopupView: View {
                 Button("Copy", action: model.copy)
                     .keyboardShortcut("c")
                     .disabled(model.result.isEmpty)
-                Button("Replace", action: model.replace)
-                    .keyboardShortcut(.defaultAction)
-                    .buttonStyle(.glassProminent)
-                    .disabled(!model.canReplace)
+                if model.copyOnlyReason == nil {
+                    Button("Replace", action: model.replace)
+                        .keyboardShortcut(.defaultAction)
+                        .buttonStyle(.glassProminent)
+                        .disabled(!model.canReplace)
+                }
             }
         }
         .controlSize(.regular)

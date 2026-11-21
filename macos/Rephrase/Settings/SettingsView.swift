@@ -56,6 +56,10 @@ private struct GeneralSettings: View {
                 }
             }
 
+            Section("App") {
+                LaunchAtLoginToggle()
+            }
+
             Section("Defaults") {
                 if let catalog = model.catalog {
                     Picker("Model", selection: Binding(

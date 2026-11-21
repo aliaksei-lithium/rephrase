@@ -9,6 +9,31 @@ struct Selection {
     let app: NSRunningApplication
     /// The focused element when the selection was read, to check the paste target is unchanged.
     let element: AXUIElement?
+
+    /// Pasting into a terminal would type into the shell prompt (and a trailing newline would run it),
+    /// so terminals only get Copy.
+    var canPaste: Bool { !TerminalApps.contains(app.bundleIdentifier) }
+}
+
+enum TerminalApps {
+    static let bundleIDs: Set<String> = [
+        "com.apple.Terminal",
+        "com.googlecode.iterm2",
+        "dev.warp.Warp-Stable",
+        "dev.warp.Warp",
+        "com.mitchellh.ghostty",
+        "net.kovidgoyal.kitty",
+        "org.alacritty",
+        "io.alacritty",
+        "com.github.wez.wezterm",
+        "co.zeit.hyper",
+        "com.raphaelamorim.rio",
+        "org.tabby",
+    ]
+
+    static func contains(_ bundleID: String?) -> Bool {
+        bundleID.map(bundleIDs.contains) ?? false
+    }
 }
 
 enum SelectionError: LocalizedError, Equatable {
@@ -131,7 +156,8 @@ enum TextReplacer {
 
     static func replace(_ selection: Selection, with text: String) async -> Outcome {
         let text = preservingEdges(of: selection.text, in: text)
-        guard NSWorkspace.shared.frontmostApplication?.processIdentifier == selection.app.processIdentifier,
+        guard selection.canPaste,
+              NSWorkspace.shared.frontmostApplication?.processIdentifier == selection.app.processIdentifier,
               AXIsProcessTrusted(),
               focusUnchanged(selection)
         else {

@@ -1,5 +1,6 @@
 import AppKit
 import Observation
+import SwiftUI
 
 /// State of one popup: the original selection, the options used, and the streamed result.
 @Observable
@@ -14,13 +15,18 @@ final class PopupModel {
     var options: RephraseOptions
     let catalog: Catalog?
     private(set) var result = ""
+    /// The finished result with changed words marked.
+    private(set) var highlighted: AttributedString?
     private(set) var phase: Phase = .streaming
     private(set) var note: String?
     private(set) var modelLabel: String?
 
-    /// Called by the controller; nil when there is no selection to write back to.
+    /// Set by the controller. Nil means the text can only be copied, and `copyOnlyReason` says why.
     var onReplace: ((String) -> Void)?
+    var copyOnlyReason: String?
     var onClose: (() -> Void)?
+    /// Lets the app react to errors, for example an expired session.
+    var onError: ((Error) -> Void)?
 
     private let makeClient: () throws -> RephraseClient
     private let model: String?
@@ -50,6 +56,7 @@ final class PopupModel {
     func run() {
         task?.cancel()
         result = ""
+        highlighted = nil
         note = nil
         phase = .streaming
         let request = RephraseRequest(text: original, options: options, model: model)
@@ -71,12 +78,18 @@ final class PopupModel {
                 }
                 try Task.checkCancellation()
                 result = OutputCleaner.clean(streamed)
-                phase = result.isEmpty ? .failed("The model returned no text. Try again.") : .done
+                if result.isEmpty {
+                    phase = .failed("The model returned no text. Try again.")
+                } else {
+                    highlighted = DiffText.attributed(original: original, result: result)
+                    phase = .done
+                }
             } catch is CancellationError {
                 // A newer run or the popup closing took over.
             } catch {
                 if Task.isCancelled { return }
                 phase = .failed(error.localizedDescription)
+                onError?(error)
             }
         }
     }

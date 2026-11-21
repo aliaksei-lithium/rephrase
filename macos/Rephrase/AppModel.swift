@@ -77,6 +77,15 @@ final class AppModel {
         catalog = nil
     }
 
+    /// A 401 from any request means the token expired or the server secret changed.
+    func handleRequestError(_ error: Error) {
+        guard case APIError.unauthorized = error else { return }
+        keychain.deleteToken(for: host)
+        auth = .signedOut
+        catalog = nil
+        lastError = "Your session expired. Sign in again."
+    }
+
     /// Checks the stored token and reloads the catalog. Called at launch and after the server changes.
     func refresh() async {
         await run {

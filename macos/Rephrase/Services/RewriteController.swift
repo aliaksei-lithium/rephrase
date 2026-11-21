@@ -35,19 +35,48 @@ final class RewriteController {
             popup.show(.message(message), near: bounds)
         }) else { return }
 
+        let model = makePopupModel(text: selection.text)
+        if selection.canPaste {
+            model.onReplace = { [weak self] text in
+                Task { await self?.paste(text, into: selection, closing: { self?.popup.close() }) }
+            }
+        } else {
+            model.copyOnlyReason = "Terminals are copy-only."
+        }
+        popup.show(model, near: selection.bounds)
+        model.run()
+    }
+
+    /// Menu bar fallback for apps whose selection can't be read: rewrite what is on the clipboard.
+    func rewriteClipboard() {
+        cancelQuick()
+        popup.close()
+        let text = NSPasteboard.general.string(forType: .string) ?? ""
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            popup.show(.message("The clipboard has no text."), near: nil)
+            return
+        }
+        guard case .signedIn = app.auth else {
+            popup.show(.message(Self.signInMessage), near: nil)
+            return
+        }
+        let model = makePopupModel(text: text)
+        model.copyOnlyReason = "From the clipboard: copy the result."
+        popup.show(model, near: nil)
+        model.run()
+    }
+
+    private func makePopupModel(text: String) -> PopupModel {
         let model = PopupModel(
-            original: selection.text,
+            original: text,
             options: app.options,
             model: app.effectiveModel,
             catalog: app.catalog,
             makeClient: { [app] in try app.client() }
         )
         model.onClose = { [weak popup] in popup?.close() }
-        model.onReplace = { [weak self] text in
-            Task { await self?.paste(text, into: selection, closing: { self?.popup.close() }) }
-        }
-        popup.show(model, near: selection.bounds)
-        model.run()
+        model.onError = { [app] error in app.handleRequestError(error) }
+        return model
     }
 
     // MARK: ⌃⌥X
@@ -97,6 +126,7 @@ final class RewriteController {
             } catch let error as URLError where error.code == .cancelled {
                 // Cancelled by the user.
             } catch {
+                self?.app.handleRequestError(error)
                 self?.badge.show(.failure(error.localizedDescription), near: selection.bounds)
             }
         }
@@ -109,6 +139,8 @@ final class RewriteController {
     }
 
     // MARK: Shared
+
+    private static let signInMessage = "Sign in first: open Settings from the Rephrase menu bar icon."
 
     /// Reads the selection and checks sign-in. Problems are shown with `report`; returns nil then.
     private func readSelection(report: (String, CGRect?) -> Void) async -> Selection? {
@@ -127,7 +159,7 @@ final class RewriteController {
             return nil
         }
         guard case .signedIn = app.auth else {
-            report("Sign in first: open Settings from the Rephrase menu bar icon.", selection.bounds)
+            report(Self.signInMessage, selection.bounds)
             return nil
         }
         return selection
@@ -140,6 +172,8 @@ final class RewriteController {
         switch await TextReplacer.replace(selection, with: text) {
         case .replaced:
             badge.show(.success("Replaced · ⌘Z to undo"), near: selection.bounds)
+        case .copiedInstead where !selection.canPaste:
+            badge.show(.info("Copied · terminals are copy-only"), near: selection.bounds)
         case .copiedInstead:
             badge.show(.failure("The text field changed, so the result was copied instead. Paste it with ⌘V."), near: selection.bounds)
         }

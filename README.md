@@ -49,7 +49,7 @@ All routes live under `/api`. Everything except `/api/auth/*` needs a session: e
 
 ## macOS app
 
-A native menu bar app in `macos/` rewrites selected text in any app: ⌃⌥C opens a popup with the rewrite, ⌃⌥X replaces the selection with your default settings. It uses the same API with a Bearer token and needs only the Accessibility permission (no keystroke monitoring). Status and design: [macos/PLAN.md](macos/PLAN.md).
+A native menu bar app in `macos/` rewrites selected text in any app: ⌃⌥C opens a popup with the rewrite, ⌃⌥X replaces the selection with your default settings. Changed words are underlined in the popup; terminals are copy-only. The menu bar icon also offers Rewrite Clipboard, a setup guide, and Settings (server, sign-in, defaults, shortcuts, open at login). It uses the same API with a Bearer token and needs only the Accessibility permission (no keystroke monitoring). Status and design: [macos/PLAN.md](macos/PLAN.md).
 
 ```bash
 brew install xcodegen
