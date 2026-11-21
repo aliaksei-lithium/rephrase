@@ -10,6 +10,11 @@ struct RephraseClient {
         try await send("api/auth/login", method: "POST", body: ["password": password], authorized: false)
     }
 
+    /// A public demo session: no password, the free Gemma model only, with a shared daily limit.
+    func startDemo() async throws -> LoginResponse {
+        try await send("api/auth/demo", method: "POST", authorized: false)
+    }
+
     func me() async throws -> MeResponse {
         try await send("api/auth/me")
     }
@@ -141,10 +146,14 @@ struct LoginResponse: Decodable {
 struct MeResponse: Decodable {
     let authenticated: Bool
     let expiresAt: Date?
+    /// The session is a demo one. Missing on servers without the demo.
+    var demo: Bool?
+    var demoAvailable: Bool?
 
     enum CodingKeys: String, CodingKey {
-        case authenticated
+        case authenticated, demo
         case expiresAt = "expires_at"
+        case demoAvailable = "demo_available"
     }
 }
 
@@ -166,10 +175,14 @@ struct Catalog: Decodable, Equatable {
     let tones: [String]
     let languages: [String]
     let formats: [String]?
+    /// Set for demo sessions, which have a shorter text limit.
+    var demo: Bool?
+    var maxChars: Int?
 
     enum CodingKeys: String, CodingKey {
-        case models, modes, styles, tones, languages, formats
+        case models, modes, styles, tones, languages, formats, demo
         case defaultModel = "default"
+        case maxChars = "max_chars"
     }
 }
 

@@ -26,6 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const passwordInput = document.getElementById('passwordInput');
     const loginError = document.getElementById('loginError');
     const loginBtn = document.getElementById('loginBtn');
+    const signInBtn = document.getElementById('signInBtn');
+    const demoBadge = document.getElementById('demoBadge');
+    const demoChoice = document.getElementById('demoChoice');
+    const demoBtn = document.getElementById('demoBtn');
 
     const PREFS_KEY = 'rephrase.prefs.v2';
     const AUTO_DEBOUNCE_MS = 3000;
@@ -45,6 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let sessionCost = 0;
     let inFlight = null;
     let debounceTimer = null;
+    // Public demo: Gemma only, shared daily limit. demo.active means the current session is a demo one.
+    const demo = { available: false, active: false };
 
     // ---------- prefs ----------
     function loadPrefs() {
@@ -97,13 +103,34 @@ document.addEventListener('DOMContentLoaded', () => {
     function showLogin() {
         loginOverlay.hidden = false;
         logoutBtn.hidden = true;
+        signInBtn.hidden = true;
+        demoChoice.hidden = !demo.available;
+        demoBtn.textContent = demo.active ? 'Back to the demo' : 'Try the demo';
         setTimeout(() => passwordInput.focus(), 0);
     }
     function hideLogin() {
         loginOverlay.hidden = true;
-        logoutBtn.hidden = false;
         loginError.textContent = '';
         passwordInput.value = '';
+        applySessionUi();
+    }
+    function applySessionUi() {
+        logoutBtn.hidden = demo.active;
+        signInBtn.hidden = !demo.active;
+        demoBadge.hidden = !demo.active;
+    }
+    function demoStatusText(info) {
+        if (!info) return '';
+        const parts = [];
+        if (typeof info.left_for_you === 'number') parts.push(`${info.left_for_you} demo rewrites left today`);
+        if (typeof info.budget_left === 'number' && info.budget_left < 0.2) parts.push('shared demo quota almost used up');
+        return parts.join(' · ');
+    }
+    async function startDemo() {
+        const res = await fetch('/api/auth/demo', { method: 'POST', credentials: 'same-origin' });
+        if (!res.ok) return false;
+        demo.active = true;
+        return true;
     }
     async function checkAuth() {
         try {
@@ -113,7 +140,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 setStatus('Server is missing APP_PASSWORD. See README.', 'warn');
                 return false;
             }
-            if (!data.authenticated) {
+            demo.available = Boolean(data.demo_available);
+            demo.active = Boolean(data.authenticated && data.demo);
+            // Anyone can try the app: without a session, start a demo one instead of asking for the password.
+            if (!data.authenticated && !(demo.available && (await startDemo()))) {
                 showLogin();
                 return false;
             }
@@ -141,6 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 passwordInput.select();
                 return;
             }
+            demo.active = false;
             hideLogin();
             await loadModels();
             inputText.focus();
@@ -152,7 +183,27 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     logoutBtn.addEventListener('click', async () => {
         await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+        demo.active = false;
+        demoBadge.hidden = true;
         showLogin();
+    });
+    signInBtn.addEventListener('click', showLogin);
+    demoBtn.addEventListener('click', async () => {
+        demoBtn.disabled = true;
+        loginError.textContent = '';
+        try {
+            if (demo.active || (await startDemo())) {
+                hideLogin();
+                await loadModels();
+                inputText.focus();
+            } else {
+                loginError.textContent = 'The demo is not available right now.';
+            }
+        } catch (e) {
+            loginError.textContent = e.message;
+        } finally {
+            demoBtn.disabled = false;
+        }
     });
 
     // ---------- models ----------
@@ -172,6 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!modelById.has(state.model)) state.model = data.default || models[0]?.id || null;
             modelSelect.value = state.model || '';
             if (!models.length) setStatus('No AI provider configured on the server.', 'warn');
+            else if (data.demo) setStatus(`Demo: the free Gemma model, texts up to ${(data.max_chars || 2000).toLocaleString()} characters. <button type="button" class="inline-link" data-action="sign-in">Sign in</button> for Claude.`);
             else setStatus('Ready.');
         } catch (e) {
             if (!e.unauthorized) setStatus(`Could not load models: ${e.message}`, 'warn');
@@ -243,6 +295,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({ status: res.status, statusText: res.statusText }));
+                if (errorData.code?.startsWith('demo_') || (demo.active && errorData.code === 'too_long')) {
+                    // Expected demo limits: say so plainly instead of opening the error details.
+                    outputText.textContent = errorData.error;
+                    outputText.classList.remove('loading');
+                    setStatus(`${errorData.error} <button type="button" class="inline-link" data-action="sign-in">Sign in</button>`, 'warn');
+                    return;
+                }
                 showError({ status: res.status, ...errorData });
                 outputText.textContent = `Error: ${errorData.error || `HTTP ${res.status}`}`;
                 outputText.classList.remove('loading');
@@ -309,7 +368,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const m = modelById.get(usedModel);
             const parts = [`<strong>${m ? m.label : usedModel}</strong>`];
             if (done?.usage) parts.push(`${done.usage.input_tokens} in / ${done.usage.output_tokens} out`);
-            parts.push(`${fmtCost(cost)} (session ${fmtCost(sessionCost)})`);
+            if (done?.demo) parts.push(demoStatusText(done.demo));
+            else parts.push(`${fmtCost(cost)} (session ${fmtCost(sessionCost)})`);
             if (finalMd === markdown) parts.push('no changes');
             setStatus(`${info ? `<div class="usage-item warn-text">${info}</div>` : ''}<div class="usage-item">${parts.join(' · ')}</div>`);
         } catch (error) {
@@ -457,6 +517,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     closeToolboxBtn.addEventListener('click', hideError);
+    statusInfo.addEventListener('click', (ev) => {
+        if (ev.target.closest('[data-action="sign-in"]')) showLogin();
+    });
 
     // ---------- init ----------
     loadPrefs();

@@ -30,6 +30,26 @@ Cloudflare Pages builds from GitHub with no build command; `wrangler.toml` sets 
 | `AUTH_SECRET` | optional, signs session tokens (defaults to `APP_PASSWORD`) |
 | `ANTHROPIC_BASE_URL` | optional, routes Claude calls through Cloudflare AI Gateway |
 
+### Demo
+
+Visitors without the password get a demo session (`POST /api/auth/demo`): the web app starts one on its own, and the macOS app offers **Try Demo**. Demo sessions can use only Gemma 4 26B on Workers AI, and all of them share one daily budget so the demo stays inside the Workers AI free allocation (10,000 neurons per day, reset at 00:00 UTC).
+
+`functions/lib/demo.js` keeps the budget in the `rephrase-demo` D1 database (binding `DEMO_DB`, tables created on first use). Each request reserves its worst case in neurons before it runs (input estimate plus `max_tokens`) and gives back what it did not use, so concurrent requests cannot overshoot. Each visitor also has a daily request limit, counted by a salted, per-day hash of the IP address; the IP itself is not stored.
+
+| Variable (`wrangler.toml`) | Default | Purpose |
+| --- | --- | --- |
+| `DEMO_ENABLED` | `true` | `false` turns the demo off; existing demo sessions stop working |
+| `DEMO_NEURONS_PER_DAY` | `6000` | shared budget; the rest of the 10,000 is left for your own Gemma use and fallbacks |
+| `DEMO_REQUESTS_PER_CLIENT` | `30` | rewrites per visitor per day |
+| `DEMO_MAX_CHARS` | `2000` | longest demo text |
+| `DEMO_MAX_OUTPUT_TOKENS` | `3072` | `max_tokens` for demo requests, which sets the reservation |
+
+The demo is off when the `AI` or `DEMO_DB` binding is missing, so plain `npm run dev` has no demo; `npm run dev:free` has one, with a local D1 database. To check today's usage in production:
+
+```bash
+npx wrangler d1 execute rephrase-demo --remote --command "SELECT * FROM demo_usage ORDER BY day DESC LIMIT 3"
+```
+
 `npm run deploy` deploys from your machine instead.
 
 The production site is `https://rephrase.aliaksei.xyz`, a custom domain on the `rephrase` Pages project (Workers & Pages > rephrase > Custom domains); `rephrase-eey.pages.dev` keeps working. The macOS app defaults to the custom domain.
@@ -41,10 +61,11 @@ All routes live under `/api`. Everything except `/api/auth/*` needs a session: t
 | Route | Method | Body / result |
 | --- | --- | --- |
 | `/api/auth/login` | POST | `{ "password" }` → `{ ok, token, expires_at }` and sets the cookie |
+| `/api/auth/demo` | POST | `{ ok, token, demo, expires_at }` and sets the cookie; 404 when the demo is off |
 | `/api/auth/logout` | POST | clears the cookie |
-| `/api/auth/me` | GET | `{ authenticated, configured, expires_at }` |
-| `/api/models` | GET | `{ models, default, modes, styles, tones, languages, formats }` |
-| `/api/rephrase` | POST | `{ text, mode, style, tone, language, format (markdown/plain), model, stream }` → SSE stream, or JSON with `stream: false` |
+| `/api/auth/me` | GET | `{ authenticated, configured, demo, demo_available, expires_at }`, plus `demo_status` for demo sessions |
+| `/api/models` | GET | `{ models, default, modes, styles, tones, languages, formats }`; demo sessions get only Gemma and `demo, max_chars` |
+| `/api/rephrase` | POST | `{ text, mode, style, tone, language, format (markdown/plain), model, stream }` → SSE stream, or JSON with `stream: false`. Demo sessions get `demo: { left_for_you, budget_left }` in the result, or 429 with `code` `demo_limit` / `demo_client_limit` |
 
 ### Prompts
 

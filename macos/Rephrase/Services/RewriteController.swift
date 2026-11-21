@@ -141,7 +141,7 @@ final class RewriteController {
 
     // MARK: Shared
 
-    private static let signInMessage = "Sign in first: open Settings from the Rephrase menu bar icon."
+    private static let signInMessage = "Sign in or try the demo first: open Settings from the Rephrase menu bar icon."
     private static let notTrustedMessage = "Rephrase isn't allowed yet. In System Settings › Privacy & Security › Accessibility, turn Rephrase on. If it is already on, remove it with − and add it again: each new build needs a fresh grant."
 
     /// Reads the selection and checks sign-in. Problems are shown with `report`; returns nil then.

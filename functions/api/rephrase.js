@@ -1,3 +1,4 @@
+import { DEMO_MODEL_ID, DemoLimitError, demoConfig, reserveDemo } from '../lib/demo.js';
 import { error, json } from '../lib/http.js';
 import { availableModels, DEFAULT_MODEL_ID, findModel } from '../lib/models.js';
 import { buildSystemPrompt, cleanOutput, FORMATS, LANGUAGES, MODES, STYLES, TONES, wrapText } from '../lib/prompts.js';
@@ -21,9 +22,15 @@ function pick(value, allowed, fallback) {
  *   model  one of /api/models ids
  *   stream true (default) -> text/event-stream of {type:"delta"|"done"|"error"|"info"}
  *          false -> JSON { text, model, provider, usage }
+ *
+ * Demo sessions always use the demo model, have a shorter text limit and draw on the shared
+ * daily demo budget; over it they get 429 { code: "demo_limit" | "demo_client_limit" }.
+ * Their "done" event and JSON response also carry demo: { left_for_you, budget_left }.
  */
 export async function onRequestPost(context) {
     const { request, env } = context;
+    const isDemo = Boolean(context.data?.session?.demo);
+    const maxChars = isDemo ? demoConfig(env).maxChars : MAX_CHARS;
 
     let body;
     try {
@@ -34,7 +41,10 @@ export async function onRequestPost(context) {
 
     const text = typeof body.text === 'string' ? body.text : '';
     if (!text.trim()) return error('Text is required');
-    if (text.length > MAX_CHARS) return error(`Text is too long (max ${MAX_CHARS} characters)`, 413);
+    if (text.length > maxChars) {
+        const hint = isDemo ? ' in the demo. Sign in for longer texts.' : '';
+        return error(`Text is too long (max ${maxChars} characters)${hint}`, 413, { code: 'too_long', max_chars: maxChars });
+    }
 
     const mode = pick(body.mode, MODES, 'default');
     const style = pick(body.style, STYLES, 'keep');
@@ -44,7 +54,8 @@ export async function onRequestPost(context) {
 
     const available = availableModels(env);
     if (!available.length) return error('No AI provider is configured (set ANTHROPIC_API_KEY or the AI binding)', 500);
-    const requestedId = body.model || env.ANTHROPIC_MODEL || DEFAULT_MODEL_ID;
+    const requestedId = isDemo ? DEMO_MODEL_ID : body.model || env.ANTHROPIC_MODEL || DEFAULT_MODEL_ID;
+    if (isDemo && !available.some((m) => m.id === DEMO_MODEL_ID)) return error('The demo model is not available', 503);
     const model = available.some((m) => m.id === requestedId) ? findModel(requestedId) : findModel(available[0].id);
 
     const system = buildSystemPrompt({ mode, style, tone, language, format });
@@ -52,16 +63,33 @@ export async function onRequestPost(context) {
     const wantStream = body.stream !== false;
 
     const run = streamFor(model);
-    const fallbackModel = model.provider === 'anthropic' && env.AI ? findModel('@cf/google/gemma-4-26b-a4b-it') : null;
+    const fallbackModel = !isDemo && model.provider === 'anthropic' && env.AI ? findModel(DEMO_MODEL_ID) : null;
+    const runArgs = { env, model, system, user, signal: request.signal };
+
+    let demo = null;
+    if (isDemo) {
+        runArgs.maxTokens = demoConfig(env).maxOutputTokens;
+        try {
+            demo = await reserveDemo(request, env, system.length + user.length);
+        } catch (e) {
+            if (e instanceof DemoLimitError) return error(e.message, 429, { code: e.code });
+            return error('The demo is unavailable right now. Try again later.', 503, { code: 'demo_unavailable' });
+        }
+    }
+    const settleDemo = (usage, produced) => (demo ? demo.settle(usage, { produced }).catch(() => {}) : Promise.resolve());
+    const demoInfo = demo ? { demo: demo.status } : {};
 
     if (!wantStream) {
+        let result = null;
         try {
-            const result = await collect(run, { env, model, system, user, signal: request.signal });
+            result = await collect(run, runArgs);
             const text = cleanOutput(result.text);
             if (!text) return json({ error: 'The model returned no text. Try again or pick another model.', usage: result.usage }, 502);
-            return json({ text, model: model.id, provider: model.provider, usage: result.usage });
+            return json({ text, model: model.id, provider: model.provider, usage: result.usage, ...demoInfo });
         } catch (e) {
             return upstreamErrorResponse(e);
+        } finally {
+            context.waitUntil(settleDemo(result?.usage, Boolean(result?.text)));
         }
     }
 
@@ -74,15 +102,17 @@ export async function onRequestPost(context) {
         (async () => {
             let usedModel = model;
             let emitted = false;
+            let usage = null;
             try {
                 try {
-                    for await (const ev of run({ env, model, system, user, signal: request.signal })) {
+                    for await (const ev of run(runArgs)) {
                         if (ev.type === 'delta') {
                             emitted = true;
                             await send(ev);
                         } else if (ev.type === 'done') {
+                            usage = ev.usage;
                             if (!emitted) throw new UpstreamError('The model returned no text. Try again or pick another model.', { status: 502, retryable: true });
-                            await send({ type: 'done', model: usedModel.id, provider: usedModel.provider, usage: ev.usage, stop_reason: ev.stop_reason });
+                            await send({ type: 'done', model: usedModel.id, provider: usedModel.provider, usage: ev.usage, stop_reason: ev.stop_reason, ...demoInfo });
                         }
                     }
                 } catch (e) {
@@ -108,6 +138,9 @@ export async function onRequestPost(context) {
                     /* client gone */
                 }
             } finally {
+                // A model can bill for reasoning without emitting text, so only a run with no
+                // usage and no output is treated as free.
+                await settleDemo(usage, emitted || Boolean(usage));
                 try {
                     await writer.close();
                 } catch {

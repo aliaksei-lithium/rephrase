@@ -7,7 +7,20 @@ pages_build_output_dir = "public"
 [vars]
 ANTHROPIC_MODEL = "claude-sonnet-5"
 SESSION_DAYS = "180"
+# Public demo (Gemma only, no password). Set DEMO_ENABLED = "false" to turn it off.
+# The daily budget keeps all demo traffic under the Workers AI free 10,000 neurons per day.
+DEMO_ENABLED = "true"
+DEMO_NEURONS_PER_DAY = "6000"
+DEMO_REQUESTS_PER_CLIENT = "30"
+DEMO_MAX_CHARS = "2000"
 # ANTHROPIC_BASE_URL = "https://gateway.ai.cloudflare.com/v1/<ACCOUNT_ID>/<GATEWAY>/anthropic"
+
+# D1 counter for the shared demo budget (functions/lib/demo.js creates its tables).
+# Bindings are not inherited, so it is declared at the top level (local dev) and per environment.
+[[d1_databases]]
+binding = "DEMO_DB"
+database_name = "rephrase-demo"
+database_id = "122156c6-4a4c-43b5-871e-8398965e93c9"
 
 # Workers AI binding for the free Gemma model and as a fallback when Anthropic is unavailable.
 # Declared per environment so plain `wrangler pages dev` does not need a remote session;
@@ -15,5 +28,15 @@ SESSION_DAYS = "180"
 [env.production.ai]
 binding = "AI"
 
+[[env.production.d1_databases]]
+binding = "DEMO_DB"
+database_name = "rephrase-demo"
+database_id = "122156c6-4a4c-43b5-871e-8398965e93c9"
+
 [env.preview.ai]
 binding = "AI"
+
+[[env.preview.d1_databases]]
+binding = "DEMO_DB"
+database_name = "rephrase-demo"
+database_id = "122156c6-4a4c-43b5-871e-8398965e93c9"

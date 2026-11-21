@@ -7,7 +7,8 @@ final class AppModel {
     enum AuthState: Equatable {
         case unknown
         case signedOut
-        case signedIn(expiresAt: Date?)
+        /// demo: a public demo session (free Gemma model only, shared daily limit).
+        case signedIn(expiresAt: Date?, demo: Bool = false)
     }
 
     static let defaultServer = "https://rephrase.aliaksei.xyz"
@@ -18,6 +19,8 @@ final class AppModel {
     private(set) var catalog: Catalog?
     private(set) var lastError: String?
     private(set) var isBusy = false
+    /// The server offers the public demo. Unknown (nil) until /api/auth/me answered.
+    private(set) var demoAvailable: Bool?
 
     var serverURL: String {
         didSet { defaults.set(serverURL, forKey: Keys.server) }
@@ -43,8 +46,13 @@ final class AppModel {
         switch auth {
         case .unknown: "Connecting…"
         case .signedOut: "Not signed in"
+        case .signedIn(_, demo: true): "Demo on \(host) (Gemma only)"
         case .signedIn: "Signed in to \(host)"
         }
+    }
+
+    var isDemo: Bool {
+        if case .signedIn(_, demo: true) = auth { true } else { false }
     }
 
     var host: String {
@@ -74,6 +82,16 @@ final class AppModel {
         }
     }
 
+    func startDemo() async {
+        await run {
+            let response = try await client().startDemo()
+            try keychain.setToken(response.token, for: host)
+            auth = .signedIn(expiresAt: response.expiresAt, demo: true)
+            demoAvailable = true
+            catalog = try await client().catalog()
+        }
+    }
+
     func signOut() {
         keychain.deleteToken(for: host)
         auth = .signedOut
@@ -93,14 +111,15 @@ final class AppModel {
     func refresh() async {
         await run {
             let client = try client()
+            let me = try await client.me()
+            demoAvailable = me.demoAvailable ?? false
             guard client.token != nil else {
                 auth = .signedOut
                 catalog = nil
                 return
             }
-            let me = try await client.me()
             if me.authenticated {
-                auth = .signedIn(expiresAt: me.expiresAt)
+                auth = .signedIn(expiresAt: me.expiresAt, demo: me.demo ?? false)
                 catalog = try await client.catalog()
             } else {
                 keychain.deleteToken(for: host)
