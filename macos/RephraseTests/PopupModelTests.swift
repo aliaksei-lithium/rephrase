@@ -85,3 +85,33 @@ struct PopupModelTests {
         #expect(model.phase == .failed("Overloaded"))
     }
 }
+
+@Suite(.serialized)
+struct QuickReplaceTests {
+    @Test func nonStreamingCall() async throws {
+        StubProtocol.status = 200
+        StubProtocol.body = #"{"text":"I have an idea.","model":"m1","provider":"anthropic","usage":null}"#
+        var client = RephraseClient(baseURL: URL(string: "https://stub.test")!, token: "t")
+        client.session = StubProtocol.session()
+        let result = try await client.rephraseOnce(RephraseRequest(text: "i has a idea", options: RephraseOptions(), model: "m1"))
+        #expect(result.text == "I have an idea.")
+        #expect(result.model == "m1")
+    }
+
+    @Test func nonStreamingError() async {
+        StubProtocol.status = 502
+        StubProtocol.body = #"{"error":"The model returned no text. Try again or pick another model."}"#
+        var client = RephraseClient(baseURL: URL(string: "https://stub.test")!, token: "t")
+        client.session = StubProtocol.session()
+        await #expect(throws: APIError.message("The model returned no text. Try again or pick another model.")) {
+            try await client.rephraseOnce(RephraseRequest(text: "x", options: RephraseOptions(), model: nil))
+        }
+    }
+
+    @Test func keepsSelectionEdges() {
+        #expect(TextReplacer.preservingEdges(of: "i has idea\n", in: "I have an idea.") == "I have an idea.\n")
+        #expect(TextReplacer.preservingEdges(of: "  two spaces ", in: "Two spaces.") == "  Two spaces. ")
+        #expect(TextReplacer.preservingEdges(of: "no edges", in: " No edges. ") == "No edges.")
+        #expect(TextReplacer.preservingEdges(of: "\n\n", in: "x") == "x")
+    }
+}

@@ -75,12 +75,20 @@ final class PopupController: NSObject, NSWindowDelegate {
 
     private func reposition() {
         guard let panel else { return }
-        let size = panel.frame.size
-        let gap: CGFloat = 8
+        let origin = PanelPlacement.origin(for: panel.frame.size, near: anchor, placeAbove: &placeAbove)
+        if panel.frame.origin != origin {
+            panel.setFrameOrigin(origin)
+        }
+    }
+}
+
+enum PanelPlacement {
+    /// Below the anchor, or above it once that would run off the bottom (and then stays above),
+    /// clamped to the visible frame of the anchor's screen.
+    static func origin(for size: CGSize, near anchor: CGRect, placeAbove: inout Bool, gap: CGFloat = 8) -> CGPoint {
         let screen = NSScreen.screens.first { $0.frame.insetBy(dx: -1, dy: -1).contains(anchor.origin) } ?? NSScreen.main
         let visible = screen?.visibleFrame ?? .zero
 
-        // Prefer below the selection; flip above once it would run off the bottom, and stay there.
         if !placeAbove, anchor.minY - gap - size.height < visible.minY, anchor.maxY + gap + size.height <= visible.maxY {
             placeAbove = true
         }
@@ -90,8 +98,6 @@ final class PopupController: NSObject, NSWindowDelegate {
         )
         origin.x = min(max(origin.x, visible.minX + gap), visible.maxX - size.width - gap)
         origin.y = min(max(origin.y, visible.minY + gap), visible.maxY - size.height - gap)
-        if panel.frame.origin != origin {
-            panel.setFrameOrigin(origin)
-        }
+        return origin
     }
 }

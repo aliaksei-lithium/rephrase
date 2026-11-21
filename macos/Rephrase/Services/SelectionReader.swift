@@ -7,6 +7,8 @@ struct Selection {
     /// Selection rectangle in AppKit screen coordinates, when the app reports it.
     let bounds: CGRect?
     let app: NSRunningApplication
+    /// The focused element when the selection was read, to check the paste target is unchanged.
+    let element: AXUIElement?
 }
 
 enum SelectionError: LocalizedError, Equatable {
@@ -36,7 +38,7 @@ enum SelectionReader {
         // Electron apps (Slack, VS Code) build their accessibility tree only when asked.
         AXUIElementSetAttributeValue(appElement, "AXManualAccessibility" as CFString, kCFBooleanTrue)
 
-        let focused: AXUIElement? = element(appElement, kAXFocusedUIElementAttribute)
+        let focused = focusedElement(of: appElement)
         if let focused {
             let role: String? = value(focused, kAXRoleAttribute)
             let subrole: String? = value(focused, kAXSubroleAttribute)
@@ -44,12 +46,16 @@ enum SelectionReader {
                 throw SelectionError.secureField
             }
             if let text: String = value(focused, kAXSelectedTextAttribute), !text.isEmpty {
-                return Selection(text: text, bounds: selectionBounds(focused), app: app)
+                return Selection(text: text, bounds: selectionBounds(focused), app: app, element: focused)
             }
         }
 
         let text = try await copySelection()
-        return Selection(text: text, bounds: focused.flatMap(selectionBounds), app: app)
+        return Selection(text: text, bounds: focused.flatMap(selectionBounds), app: app, element: focused)
+    }
+
+    static func focusedElement(of appElement: AXUIElement) -> AXUIElement? {
+        element(appElement, kAXFocusedUIElementAttribute)
     }
 
     /// Opens the system prompt that lists Rephrase in Privacy & Security > Accessibility.
@@ -124,8 +130,10 @@ enum TextReplacer {
     enum Outcome { case replaced, copiedInstead }
 
     static func replace(_ selection: Selection, with text: String) async -> Outcome {
+        let text = preservingEdges(of: selection.text, in: text)
         guard NSWorkspace.shared.frontmostApplication?.processIdentifier == selection.app.processIdentifier,
-              AXIsProcessTrusted()
+              AXIsProcessTrusted(),
+              focusUnchanged(selection)
         else {
             NSPasteboard.general.setTransientString(text)
             return .copiedInstead
@@ -142,5 +150,24 @@ enum TextReplacer {
         try? await Task.sleep(for: .milliseconds(400))
         snapshot.restore(to: pasteboard)
         return .replaced
+    }
+}
+
+extension TextReplacer {
+    /// The server trims its answer; keep the selection's own leading and trailing whitespace
+    /// (a triple-clicked paragraph ends with a newline) so the surrounding text stays intact.
+    static func preservingEdges(of original: String, in result: String) -> String {
+        let leading = original.prefix { $0.isWhitespace }
+        let trailing = String(original.reversed().prefix { $0.isWhitespace }.reversed())
+        guard leading.count < original.count else { return result }
+        return leading + result.trimmingCharacters(in: .whitespacesAndNewlines) + trailing
+    }
+
+    private static func focusUnchanged(_ selection: Selection) -> Bool {
+        guard let before = selection.element else { return true }
+        let appElement = AXUIElementCreateApplication(selection.app.processIdentifier)
+        AXUIElementSetMessagingTimeout(appElement, 0.5)
+        guard let now = SelectionReader.focusedElement(of: appElement) else { return true }
+        return CFEqual(before, now)
     }
 }

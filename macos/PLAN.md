@@ -1,6 +1,6 @@
 # Rephrase for macOS: Plan
 
-Status: written 2026-11-21. Phases 1 to 3 and the repo housekeeping (section 7) are done; Phase 3 still needs the manual test matrix. Next is Phase 4. Target: macOS 26 (Tahoe) and later, built with Xcode 27, Swift 6.2.
+Status: written 2026-11-21. Phases 1 to 4 and the repo housekeeping (section 7) are done; phases 3 and 4 still need the manual test matrix. Next is Phase 5. Target: macOS 26 (Tahoe) and later, built with Xcode 27, Swift 6.2.
 
 ## 1. What it does
 
@@ -140,6 +140,7 @@ TextEdit, Notes, Mail, Pages, Safari textarea and contenteditable, Chrome, Slack
 - Section 7: site files moved to `public/`, `pages_build_output_dir = "public"`, npm scripts updated.
 - Phase 2: XcodeGen project (`project.yml`), menu bar app, Settings (server, sign in/out, defaults, shortcut recorders), token in the login Keychain, catalog from `/api/models`. The shortcut names are defined, but nothing handles them until Phase 3.
 - Phase 3: ⌃⌥C reads the selection (`SelectionReader`: AX, `AXManualAccessibility` for Electron, ⌘C fallback with clipboard restore), opens a non-activating Liquid Glass popup next to it (`PopupPanel`, `PopupView`), streams the rewrite (`RephraseClient.rephrase`, `SSEParser`), re-runs when mode, style, tone, or language change, and replaces by pasting (`TextReplacer`). Without the Accessibility permission the shortcut opens the system prompt; the menu also offers it.
+- Phase 4: ⌃⌥X sends a non-streaming request with the default settings, shows a glass badge ("Rewriting…", Esc, the shortcut again, or a click elsewhere cancels), and pastes the result. Before pasting it checks that the same app and the same focused element are still in front; otherwise it copies the result and says so. The selection's leading and trailing whitespace is kept, so a triple-clicked paragraph keeps its newline. If nothing changed it shows "Already looks good" and pastes nothing. The popup's Replace uses the same paste path and badge.
 - Tests: decoding, error mapping, Keychain round trip, SSE parsing, output cleanup, popup state with a stubbed stream, and opt-in live sign-in and streaming tests.
-- Not verified yet: the hotkey-to-paste flow in real apps (needs the Accessibility permission granted by hand) and the glass rendering on screen.
+- Not verified yet: the ⌃⌥C and ⌃⌥X flows in real apps (needs the Accessibility permission granted by hand) and the glass rendering on screen.
 - Signing is still ad-hoc (`CODE_SIGN_IDENTITY: "-"`). Install an Apple Development certificate and set `DEVELOPMENT_TEAM` before Phase 3, or the Accessibility permission resets on every build.

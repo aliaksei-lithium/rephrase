@@ -48,6 +48,20 @@ struct RephraseClient {
         }
     }
 
+    /// One JSON response; used by quick replace, where nothing is shown while the text arrives.
+    func rephraseOnce(_ body: RephraseRequest) async throws -> RephraseResult {
+        var body = body
+        body.stream = false
+        var request = try makeRequest("api/rephrase", method: "POST", body: body)
+        request.timeoutInterval = 120
+        let (data, response) = try await session.data(for: request)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200..<300).contains(status) else {
+            throw APIError.from(status: status, data: data)
+        }
+        return try Self.decoder.decode(RephraseResult.self, from: data)
+    }
+
     private func makeRequest(_ path: String, method: String, body: (some Encodable)?, authorized: Bool = true) throws -> URLRequest {
         var request = URLRequest(url: baseURL.appending(path: path))
         request.httpMethod = method
@@ -106,6 +120,12 @@ struct RephraseRequest: Encodable, Equatable {
         language = options.language
         self.model = model
     }
+}
+
+/// POST /api/rephrase with stream: false
+struct RephraseResult: Decodable {
+    let text: String
+    let model: String?
 }
 
 struct LoginResponse: Decodable {
