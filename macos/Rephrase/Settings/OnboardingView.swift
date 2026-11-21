@@ -64,6 +64,13 @@ struct OnboardingView: View {
                 ) {
                     Button("Allow…", action: Onboarding.openAccessibilitySettings)
                 }
+                if !trusted {
+                    Text("Already on in System Settings but not working? Remove Rephrase with − and add it again. A rebuilt app counts as a new app until it is signed with your Apple Development certificate.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.leading, 38)
+                }
                 StepRow(number: 3, title: "Select text anywhere and press", detail: nil, done: false) {
                     EmptyView()
                 }

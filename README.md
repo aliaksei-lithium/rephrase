@@ -53,8 +53,11 @@ A native menu bar app in `macos/` rewrites selected text in any app: ⌃⌥C ope
 
 ```bash
 brew install xcodegen
-cd macos && xcodegen generate && open Rephrase.xcodeproj
+macos/scripts/install.sh                          # Release build into ~/Applications, then launches it
+REPHRASE_TEAM_ID=ABCDE12345 macos/scripts/install.sh   # same, signed with your Apple Development certificate
 ```
+
+macOS ties the Accessibility permission to the app's signature. An ad-hoc build is a new app every time, so the script resets the old entry and you allow it once more after each install. Sign with your team (Xcode > Settings > Accounts; a free Apple ID works) to keep the permission across installs. For development, `cd macos && xcodegen generate && open Rephrase.xcodeproj`.
 
 ## Prompts
 

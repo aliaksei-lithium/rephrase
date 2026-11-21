@@ -7,6 +7,7 @@ final class RewriteController {
     private let popup = PopupController()
     private let badge = BadgeController()
     private var reading = false
+    private var askedForTrust = false
     private var quickTask: Task<Void, Never>?
     private var quickRun = 0
 
@@ -141,6 +142,7 @@ final class RewriteController {
     // MARK: Shared
 
     private static let signInMessage = "Sign in first: open Settings from the Rephrase menu bar icon."
+    private static let notTrustedMessage = "Rephrase isn't allowed yet. In System Settings › Privacy & Security › Accessibility, turn Rephrase on. If it is already on, remove it with − and add it again: each new build needs a fresh grant."
 
     /// Reads the selection and checks sign-in. Problems are shown with `report`; returns nil then.
     private func readSelection(report: (String, CGRect?) -> Void) async -> Selection? {
@@ -152,7 +154,13 @@ final class RewriteController {
         do {
             selection = try await SelectionReader.read()
         } catch SelectionError.notTrusted {
-            SelectionReader.requestTrust()
+            // Ask the system once per launch; after that, explain instead of re-prompting.
+            if askedForTrust {
+                report(Self.notTrustedMessage, nil)
+            } else {
+                askedForTrust = true
+                SelectionReader.requestTrust()
+            }
             return nil
         } catch {
             report(error.localizedDescription, nil)
