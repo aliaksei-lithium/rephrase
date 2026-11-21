@@ -1,64 +1,55 @@
-# Rephrase Tool
+<p align="center">
+  <img src="docs/images/icon.png" width="132" alt="">
+</p>
 
-A small web app (and a macOS menu bar app) that fixes or lightly rephrases messages with Claude while keeping your own voice and your formatting (bold, lists, code, links pasted from Slack). Runs on Cloudflare Pages with Pages Functions.
-Live at https://rephrase-eey.pages.dev/.
+<h1 align="center">Rephrase</h1>
 
-<img width="1457" height="672" alt="image" src="https://github.com/user-attachments/assets/9ff6af32-7860-4bdf-88a1-94afdca480bc" />
+<p align="center">
+  Fix and rephrase your messages with Claude, in your own voice.<br>
+  A native macOS app for any text field, and a web app for formatted text.
+</p>
 
-## Features
+<p align="center">
+  <a href="https://github.com/aliaksei-lithium/rephrase/releases/latest"><img src="https://img.shields.io/github/v/release/aliaksei-lithium/rephrase?color=0066cc&label=download" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/macOS-26-0066cc" alt="macOS 26">
+  <img src="https://img.shields.io/badge/licence-Apache%202.0-0066cc" alt="Apache 2.0 licence">
+</p>
 
-- **Simple** mode: fixes typos, grammar, tense, articles, word order and clearly wrong words. Nothing else.
-- **Default** mode: light, idiomatic rephrase that keeps sentence order, length and personality.
-- Optional style (casual, business, academic) and tone (friendly, confident, diplomatic, enthusiastic).
-- Language: Auto keeps the input language; English or German forces the output language (and translates if the input is in the other one) with language-specific writing rules.
-- Rich-text input: paste from Slack, Gmail, Docs. Output keeps the formatting; changed words are underlined.
-- Copy back with formatting (HTML + plain text) or as Markdown.
-- Model picker: Claude Sonnet 5 (default), Opus 5, Haiku 4.5, or the free Gemma model on Workers AI.
-- Password login with a long-lived session cookie. The same token works as a Bearer header for scripts or a desktop app.
-- Streams the answer as it is generated. Shows tokens and an estimated cost per request.
-
-## Local development
-
-```bash
-npm install
-ln -s local.env .env      # local.env holds anthropic_key=...; both files are git-ignored
-cp .env.example .env.local # set APP_PASSWORD for local use
-npm run dev                # http://localhost:8788
-npm run dev:free           # same, plus the Workers AI binding (uses your account's free daily allocation)
-```
-
-Smoke test the API (logs in, lists models, runs three sample edits):
-
-```bash
-APP_PASSWORD=dev-password npm run test:api
-```
-
-Wrangler loads `.env` and `.env.local` as local variables. It ignores the `--env-file` flag for this purpose, which is why `.env` is a symlink.
-
-## API
-
-All routes live under `/api`. Everything except `/api/auth/*` needs a session: either the `rephrase_session` cookie set by login, or `Authorization: Bearer <token>`. Cross-origin calls are allowed with the Bearer header, so a desktop app can use the same endpoints.
-
-| Route | Method | Body / result |
-| --- | --- | --- |
-| `/api/auth/login` | POST | `{ "password" }` → `{ ok, token, expires_at }` and sets the cookie |
-| `/api/auth/logout` | POST | clears the cookie |
-| `/api/auth/me` | GET | `{ authenticated, configured, expires_at }` |
-| `/api/models` | GET | `{ models: [{ id, label, hint, provider, price }], default, modes, styles, tones, languages, formats }` |
-| `/api/rephrase` | POST | `{ text, mode, style, tone, language (auto/en/de), format (markdown/plain), model, stream }` |
+![Rephrase for macOS](docs/images/macos.png)
 
 ## macOS app
 
-A native menu bar app in `macos/` rewrites selected text in any app: ⌃⌥C opens a popup with the rewrite, ⌃⌥X replaces the selection with your default settings. Changed words are underlined in the popup; terminals are copy-only. The menu bar icon also offers Rewrite Clipboard, a setup guide, and Settings (server, sign-in, defaults, shortcuts, open at login). It uses the same API with a Bearer token and needs only the Accessibility permission (no keystroke monitoring). Status and design: [macos/PLAN.md](macos/PLAN.md).
+Select text in any app and press:
+
+- **⌃⌥C** to see the rewrite in a popup next to it. Change the mode, style, tone or language there, then press Enter to replace the text.
+- **⌃⌥X** to replace it straight away with your default settings. ⌘Z undoes it.
+
+It needs only the Accessibility permission, to read the selection and paste the result. It never watches what you type.
+
+### Install
+
+Download **[Rephrase 0.1.0](https://github.com/aliaksei-lithium/rephrase/releases/download/v0.1.0/Rephrase-0.1.0.dmg)** (or any version from [Releases](https://github.com/aliaksei-lithium/rephrase/releases)) and drag Rephrase to Applications. The app is not notarized, so the first time either right-click it and choose **Open**, or run:
 
 ```bash
-brew install xcodegen
-macos/scripts/install.sh                          # Release build into ~/Applications, then launches it
-REPHRASE_TEAM_ID=ABCDE12345 macos/scripts/install.sh   # same, signed with your Apple Development certificate
+xattr -dr com.apple.quarantine /Applications/Rephrase.app
 ```
 
-macOS ties the Accessibility permission to the app's signature. An ad-hoc build is a new app every time, so the script resets the old entry and you allow it once more after each install. Sign with your team (Xcode > Settings > Accounts; a free Apple ID works) to keep the permission across installs. For development, `cd macos && xcodegen generate && open Rephrase.xcodeproj`.
+The setup guide then asks you to sign in to your Rephrase server and to allow Accessibility access.
 
-## Prompts
+## Web app
 
-Prompts live in `functions/lib/prompts.js`. A shared base prompt pins language, meaning, formatting and voice; the mode, style and tone blocks are appended. Tune them against real messages and check both modes after every change.
+![Rephrase web app](docs/images/web.png)
+
+Paste formatted text from Slack, Gmail or Docs. The result keeps bold, lists, code and links, underlines what changed, and copies back with formatting or as Markdown.
+
+## What it does
+
+- **Fix** corrects typos, grammar and punctuation only. **Edit** also smooths awkward phrasing. **Rewrite** says it again in more natural words.
+- Optional style (casual, business, academic) and tone (friendly, confident, diplomatic, enthusiastic).
+- Keeps the language of the text, or writes in English or German.
+- Claude Sonnet 5 by default; Opus 5, Haiku 4.5 or the free Gemma model on Workers AI are one click away.
+- Runs on your own Cloudflare account behind a password, and keeps no copy of your text.
+
+---
+
+Apache 2.0 licence · [Building and deploying](docs/building.md)

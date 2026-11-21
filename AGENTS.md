@@ -24,7 +24,10 @@ Rephrase tool on Cloudflare Pages: static frontend plus Pages Functions that cal
 - `macos/` - native macOS app (Swift 6, SwiftUI), see `macos/PLAN.md`
   - `project.yml` - XcodeGen spec; the `.xcodeproj` is generated and git-ignored
   - `Rephrase/` - app sources; `RephraseTests/` - Swift Testing tests
+  - `scripts/release.sh` - Release archive and DMG in `macos/dist/` (ad-hoc unless `CODESIGN_IDENTITY`; notarizes with `NOTARY_PROFILE`)
+  - `Rephrase/DemoMode.swift` - Debug-only staged popup for README screenshots (window behind everything, captured with `screencapture -l`)
   - `scripts/install.sh` - Release build into `~/Applications` (separate from the Debug build that tests replace); `REPHRASE_TEAM_ID` signs with a team so Accessibility access survives reinstalls
+- `docs/building.md` - build, deploy, API and release notes; `docs/images/` - README images
 - `wrangler.toml` - Pages config, `[vars]`, and the `AI` binding for production and preview
 - `test-rephrase.js` - API smoke test against a local server
 
