@@ -151,7 +151,7 @@ export async function* anthropicStream({ env, model, system, user, signal }) {
 /**
  * Streams text from a Workers AI text-generation model via the AI binding.
  */
-export async function* workersAiStream({ env, model, system, user, signal }) {
+export async function* workersAiStream({ env, model, system, user, signal, maxTokens = 8192 }) {
     if (!env.AI) throw new UpstreamError('Workers AI binding (AI) is not configured', { status: 500 });
 
     let stream;
@@ -163,7 +163,7 @@ export async function* workersAiStream({ env, model, system, user, signal }) {
             ],
             stream: true,
             // Reasoning models spend most of this on thinking before the answer.
-            max_tokens: 8192,
+            max_tokens: maxTokens,
         }, { signal });
     } catch (e) {
         throw new UpstreamError(`Workers AI error: ${e.message}`, { retryable: true });

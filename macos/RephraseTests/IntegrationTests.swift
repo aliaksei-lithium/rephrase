@@ -24,6 +24,20 @@ struct IntegrationTests {
         #expect(catalog.formats?.contains("plain") == true)
     }
 
+    /// Needs a server with the demo (Workers AI binding and DEMO_DB), for example `npm run dev:free`.
+    @Test(.enabled(if: env["REPHRASE_BASE_URL"] != nil))
+    func demoSessionOffersOnlyGemma() async throws {
+        let base = try #require(URL(string: Self.env["REPHRASE_BASE_URL"]!))
+        guard try await RephraseClient(baseURL: base, token: nil).me().demoAvailable == true else { return }
+
+        let demo = try await RephraseClient(baseURL: base, token: nil).startDemo()
+        let client = RephraseClient(baseURL: base, token: demo.token)
+        #expect(try await client.me().demo == true)
+        let catalog = try await client.catalog()
+        #expect(catalog.demo == true)
+        #expect(catalog.models.map(\.id) == ["@cf/google/gemma-4-26b-a4b-it"])
+    }
+
     /// Set TEST_RUNNER_REPHRASE_MODEL to pick a model (for example the free Workers AI one locally).
     @Test(.enabled(if: env["REPHRASE_BASE_URL"] != nil && env["APP_PASSWORD"] != nil))
     func streamsPlainRewrite() async throws {

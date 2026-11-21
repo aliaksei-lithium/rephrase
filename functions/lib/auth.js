@@ -59,9 +59,11 @@ export async function verifyPassword(env, candidate) {
     return constantTimeEqual(b64url(new Uint8Array(a)), b64url(new Uint8Array(b)));
 }
 
-export async function issueToken(env) {
+// Demo tokens carry demo: true and can only use the demo model and budget (see demo.js).
+export async function issueToken(env, { demo = false, days = sessionDays(env) } = {}) {
     const now = Math.floor(Date.now() / 1000);
-    const payload = { v: 1, iat: now, exp: now + sessionDays(env) * 86400 };
+    const payload = { v: 1, iat: now, exp: now + days * 86400 };
+    if (demo) payload.demo = true;
     const payloadB64 = b64url(encoder.encode(JSON.stringify(payload)));
     const sig = await sign(secretOf(env), payloadB64);
     return { token: `${payloadB64}.${sig}`, payload };
@@ -105,9 +107,9 @@ export async function authenticate(request, env) {
     return verifyToken(env, token);
 }
 
-export function sessionCookie(request, env, token) {
+export function sessionCookie(request, env, token, days = sessionDays(env)) {
     const secure = new URL(request.url).protocol === 'https:' ? '; Secure' : '';
-    const maxAge = sessionDays(env) * 86400;
+    const maxAge = days * 86400;
     return `${COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${secure}`;
 }
 

@@ -10,6 +10,10 @@
 </p>
 
 <p align="center">
+  <a href="https://rephrase.aliaksei.xyz"><strong>Try it in your browser →</strong></a>
+</p>
+
+<p align="center">
   <a href="https://github.com/aliaksei-lithium/rephrase/releases/latest"><img src="https://img.shields.io/github/v/release/aliaksei-lithium/rephrase?color=0066cc&label=download" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/macOS-26-0066cc" alt="macOS 26">
   <img src="https://img.shields.io/badge/licence-Apache%202.0-0066cc" alt="Apache 2.0 licence">
@@ -34,9 +38,11 @@ Download **[Rephrase 0.1.0](https://github.com/aliaksei-lithium/rephrase/release
 xattr -dr com.apple.quarantine /Applications/Rephrase.app
 ```
 
-The setup guide then asks you to sign in to your Rephrase server and to allow Accessibility access.
+The setup guide then asks you to sign in to your Rephrase server, or to try the demo without a password, and to allow Accessibility access.
 
 ## Web app
+
+**[rephrase.aliaksei.xyz](https://rephrase.aliaksei.xyz)**
 
 ![Rephrase web app](docs/images/web.png)
 
@@ -49,6 +55,10 @@ Paste formatted text from Slack, Gmail or Docs. The result keeps bold, lists, co
 - Keeps the language of the text, or writes in English or German.
 - Claude Sonnet 5 by default; Opus 5, Haiku 4.5 or the free Gemma model on Workers AI are one click away.
 - Runs on your own Cloudflare account behind a password, and keeps no copy of your text.
+
+## Demo
+
+Anyone can try the [web app](https://rephrase.aliaksei.xyz) or the macOS app without a password. The demo uses only the free Gemma model, takes texts up to 2,000 characters, and has a daily limit shared by everyone, so it may run out before the day ends (it resets at 00:00 UTC).
 
 ---
 

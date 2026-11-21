@@ -1,4 +1,5 @@
 import { authenticate } from '../lib/auth.js';
+import { demoEnabled } from '../lib/demo.js';
 import { error, preflight, withCors } from '../lib/http.js';
 
 // Applies to every /api/* route. Login/logout/me are public; everything else needs a session.
@@ -19,6 +20,10 @@ export async function onRequest(context) {
     const session = await authenticate(request, env);
     if (!session) {
         return withCors(error('Sign in required', 401, { code: 'unauthorized' }), request);
+    }
+
+    if (session.demo && !demoEnabled(env)) {
+        return withCors(error('The demo is no longer available. Sign in with the password.', 401, { code: 'unauthorized' }), request);
     }
 
     context.data.session = session;

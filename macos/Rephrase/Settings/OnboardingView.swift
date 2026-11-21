@@ -53,10 +53,23 @@ struct OnboardingView: View {
             }
 
             VStack(alignment: .leading, spacing: 16) {
-                StepRow(number: 1, title: "Sign in", detail: "Use the Rephrase app password.", done: signedIn) {
-                    Button("Open Settings") {
-                        NSApp.activate()
-                        openSettings()
+                StepRow(
+                    number: 1,
+                    title: model.isDemo ? "Trying the demo" : "Sign in",
+                    detail: model.isDemo
+                        ? "The demo uses the free Gemma model with a daily limit. Sign in with the password in Settings for Claude."
+                        : "Use the Rephrase app password, or try the demo with the free Gemma model.",
+                    done: signedIn
+                ) {
+                    HStack {
+                        if model.demoAvailable == true {
+                            Button("Try Demo") { Task { await model.startDemo() } }
+                                .disabled(model.isBusy)
+                        }
+                        Button("Open Settings") {
+                            NSApp.activate()
+                            openSettings()
+                        }
                     }
                 }
                 StepRow(

@@ -31,7 +31,16 @@ private struct GeneralSettings: View {
                     .onSubmit(applyServer)
 
                 switch model.auth {
-                case .signedIn(let expiresAt):
+                case .signedIn(_, demo: true):
+                    LabeledContent("Status") {
+                        HStack {
+                            Text("Demo: Gemma only, limited per day")
+                            Spacer()
+                            Button("Leave Demo") { model.signOut() }
+                        }
+                    }
+                    passwordFields
+                case .signedIn(let expiresAt, _):
                     LabeledContent("Status") {
                         HStack {
                             Text(expiresAt.map { "Signed in until \($0.formatted(date: .abbreviated, time: .omitted))" } ?? "Signed in")
@@ -40,12 +49,12 @@ private struct GeneralSettings: View {
                         }
                     }
                 case .signedOut, .unknown:
-                    SecureField("Password", text: $password)
-                        .onSubmit(signIn)
-                    LabeledContent("") {
-                        Button("Sign In", action: signIn)
-                            .keyboardShortcut(.defaultAction)
-                            .disabled(password.isEmpty || model.isBusy)
+                    passwordFields
+                    if model.demoAvailable == true {
+                        LabeledContent("No password?") {
+                            Button("Try the Demo") { Task { await model.startDemo() } }
+                                .disabled(model.isBusy)
+                        }
                     }
                 }
 
@@ -93,6 +102,16 @@ private struct GeneralSettings: View {
         .onAppear { server = model.serverURL }
     }
 
+    @ViewBuilder private var passwordFields: some View {
+        SecureField("Password", text: $password)
+            .onSubmit(signIn)
+        LabeledContent("") {
+            Button("Sign In", action: signIn)
+                .keyboardShortcut(.defaultAction)
+                .disabled(password.isEmpty || model.isBusy)
+        }
+    }
+
     private func applyServer() {
         let trimmed = server.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed != model.serverURL else { return }
@@ -106,7 +125,7 @@ private struct GeneralSettings: View {
         let candidate = password
         Task {
             await model.signIn(password: candidate)
-            if case .signedIn = model.auth { password = "" }
+            if case .signedIn(_, demo: false) = model.auth { password = "" }
         }
     }
 }

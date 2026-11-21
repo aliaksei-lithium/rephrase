@@ -35,9 +35,11 @@
         <header class="top-bar">
             <div class="brand">Rephrase</div>
             <div class="top-bar-right">
+                <span id="demoBadge" class="demo-badge" hidden title="The public demo uses the free Gemma model with a shared daily limit. Sign in for Claude.">Demo</span>
                 <label class="model-label" for="modelSelect">Model</label>
                 <select id="modelSelect" class="language-select" aria-label="Model"></select>
                 <button id="logoutBtn" class="link-btn" type="button" hidden>Sign out</button>
+                <button id="signInBtn" class="link-btn" type="button" hidden>Sign in</button>
             </div>
         </header>
         <main class="main-content">
@@ -137,6 +139,10 @@
             <input id="passwordInput" type="password" name="password" autocomplete="current-password" placeholder="Password" required>
             <button type="submit" class="primary-btn" id="loginBtn">Sign in</button>
             <div id="loginError" class="login-error" role="alert"></div>
+            <div id="demoChoice" class="demo-choice" hidden>
+                <p>No password? Try the demo with the free Gemma model. It has a shared daily limit and texts up to 2,000 characters.</p>
+                <button type="button" id="demoBtn" class="secondary-btn">Try the demo</button>
+            </div>
         </form>
     </div>
 
