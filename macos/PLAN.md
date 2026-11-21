@@ -106,7 +106,7 @@ Tech choices:
 - Swift 6.2 with strict concurrency, `@Observable`, `@MainActor` UI, `async`/`await` networking.
 - SwiftUI for all views; AppKit only for the panels, AX, `CGEvent`, and pasteboard.
 - One dependency: KeyboardShortcuts (hotkey registration plus the SwiftUI recorder). Everything else is system frameworks.
-- Settings in `@AppStorage` / `UserDefaults`: server URL (default `https://rephrase-eey.pages.dev`), mode, style, tone, language, model.
+- Settings in `@AppStorage` / `UserDefaults`: server URL (default `https://rephrase.aliaksei.xyz`; a saved `rephrase-eey.pages.dev` is migrated with its token), mode, style, tone, language, model.
 - Launch at login with `SMAppService.mainApp`.
 - Not sandboxed: the App Sandbox does not allow controlling other apps through Accessibility or posting key events. Hardened runtime on.
 
