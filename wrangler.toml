@@ -1,6 +1,6 @@
 name = 'calm-hat-f6c5'
 compatibility_date = "2025-12-23"
-pages_build_output_dir = "."
+pages_build_output_dir = "public"
 
 # Non-secret defaults. Secrets (ANTHROPIC_API_KEY, APP_PASSWORD, AUTH_SECRET, AI_GATEWAY_TOKEN)
 # are set in the Pages dashboard or with `wrangler pages secret put`, and locally in local.env / .env.local.

@@ -1,0 +1,70 @@
+# XcodeGen spec. Generate the project with: cd macos && xcodegen generate
+name: Rephrase
+options:
+  bundleIdPrefix: dev.rephrase
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+
+packages:
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts
+    from: "2.0.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # Ad-hoc signing until an Apple Development certificate is installed.
+    # Accessibility trust is tied to the signature, so switch to a real identity before Phase 3.
+    CODE_SIGN_STYLE: Manual
+    CODE_SIGN_IDENTITY: "-"
+    ENABLE_HARDENED_RUNTIME: YES
+
+targets:
+  Rephrase:
+    type: application
+    platform: macOS
+    sources: [Rephrase]
+    dependencies:
+      - package: KeyboardShortcuts
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.rephrase.mac
+        PRODUCT_NAME: Rephrase
+    info:
+      path: Rephrase/Info.plist
+      properties:
+        CFBundleDisplayName: Rephrase
+        LSUIElement: true
+        LSApplicationCategoryType: public.app-category.productivity
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+    entitlements:
+      path: Rephrase/Rephrase.entitlements
+      properties:
+        # Not sandboxed: the sandbox blocks reading other apps' selections and posting key events.
+        com.apple.security.app-sandbox: false
+
+  RephraseTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [RephraseTests]
+    dependencies:
+      - target: Rephrase
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.rephrase.mac.tests
+        GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  Rephrase:
+    build:
+      targets:
+        Rephrase: all
+        RephraseTests: [test]
+    test:
+      targets: [RephraseTests]

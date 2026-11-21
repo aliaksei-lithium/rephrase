@@ -1,6 +1,6 @@
 # Rephrase Tool
 
-A small web app that fixes or lightly rephrases messages with Claude while keeping your own voice and your formatting (bold, lists, code, links pasted from Slack). Runs on Cloudflare Pages with Pages Functions.
+A small web app (and a macOS menu bar app) that fixes or lightly rephrases messages with Claude while keeping your own voice and your formatting (bold, lists, code, links pasted from Slack). Runs on Cloudflare Pages with Pages Functions.
 Live at https://rephrase-eey.pages.dev/.
 
 <img width="1457" height="672" alt="image" src="https://github.com/user-attachments/assets/9ff6af32-7860-4bdf-88a1-94afdca480bc" />
@@ -44,8 +44,20 @@ All routes live under `/api`. Everything except `/api/auth/*` needs a session: e
 | `/api/auth/login` | POST | `{ "password" }` → `{ ok, token, expires_at }` and sets the cookie |
 | `/api/auth/logout` | POST | clears the cookie |
 | `/api/auth/me` | GET | `{ authenticated, configured, expires_at }` |
-| `/api/models` | GET | `{ models: [{ id, label, hint, provider, price }], default, modes, styles, tones }` |
-| `/api/rephrase` | POST | `{ text (Markdown), mode, style, tone, language (auto/en/de), model, stream }` |
+| `/api/models` | GET | `{ models: [{ id, label, hint, provider, price }], default, modes, styles, tones, languages, formats }` |
+| `/api/rephrase` | POST | `{ text, mode, style, tone, language (auto/en/de), format (markdown/plain), model, stream }` |
+
+## macOS app
+
+A native menu bar app in `macos/` rewrites selected text in any app: ⌃⌥C opens a popup with the rewrite, ⌃⌥X replaces the selection with your default settings. Changed words are underlined in the popup; terminals are copy-only. The menu bar icon also offers Rewrite Clipboard, a setup guide, and Settings (server, sign-in, defaults, shortcuts, open at login). It uses the same API with a Bearer token and needs only the Accessibility permission (no keystroke monitoring). Status and design: [macos/PLAN.md](macos/PLAN.md).
+
+```bash
+brew install xcodegen
+macos/scripts/install.sh                          # Release build into ~/Applications, then launches it
+REPHRASE_TEAM_ID=ABCDE12345 macos/scripts/install.sh   # same, signed with your Apple Development certificate
+```
+
+macOS ties the Accessibility permission to the app's signature. An ad-hoc build is a new app every time, so the script resets the old entry and you allow it once more after each install. Sign with your team (Xcode > Settings > Accounts; a free Apple ID works) to keep the permission across installs. For development, `cd macos && xcodegen generate && open Rephrase.xcodeproj`.
 
 ## Prompts
 

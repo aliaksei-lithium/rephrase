@@ -20,6 +20,10 @@ const cases = [
         name: 'German stays German',
         body: { mode: 'simple', text: 'Ich habe gestern die Bericht geschickt aber die Zahlen war falsch.' },
     },
+    {
+        name: 'Plain format adds no Markdown escapes',
+        body: { mode: 'default', format: 'plain', text: 'pls check *before* friday:\n- the 2*3 grid\n- file_name_v2.txt\n\n# not a heading, just a hash' },
+    },
 ];
 
 async function login() {
