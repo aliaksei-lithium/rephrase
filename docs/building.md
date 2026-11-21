@@ -32,6 +32,8 @@ Cloudflare Pages builds from GitHub with no build command; `wrangler.toml` sets 
 
 `npm run deploy` deploys from your machine instead.
 
+The production site is `https://rephrase.aliaksei.xyz`, a custom domain on the `rephrase` Pages project (Workers & Pages > rephrase > Custom domains); `rephrase-eey.pages.dev` keeps working. The macOS app defaults to the custom domain.
+
 ### API
 
 All routes live under `/api`. Everything except `/api/auth/*` needs a session: the `rephrase_session` cookie set by login, or `Authorization: Bearer <token>`.

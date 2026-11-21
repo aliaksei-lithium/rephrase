@@ -10,7 +10,9 @@ final class AppModel {
         case signedIn(expiresAt: Date?)
     }
 
-    static let defaultServer = "https://rephrase-eey.pages.dev"
+    static let defaultServer = "https://rephrase.aliaksei.xyz"
+    /// Earlier defaults. A saved value equal to one of these follows the current default.
+    static let legacyServers = ["https://rephrase-eey.pages.dev"]
 
     private(set) var auth: AuthState = .unknown
     private(set) var catalog: Catalog?
@@ -33,6 +35,7 @@ final class AppModel {
         self.keychain = keychain
         serverURL = defaults.string(forKey: Keys.server) ?? Self.defaultServer
         options = RephraseOptions(from: defaults)
+        migrateLegacyServer()
         Task { await refresh() }
     }
 
@@ -117,6 +120,20 @@ final class AppModel {
             lastError = error.localizedDescription
             if auth == .unknown { auth = .signedOut }
         }
+    }
+
+    /// Moves a saved legacy default to the current one, carrying the session token over:
+    /// tokens are signed by the server secret, not bound to a host, so the user stays signed in.
+    private func migrateLegacyServer() {
+        let saved = serverURL.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        guard Self.legacyServers.contains(saved) else { return }
+        let oldHost = host
+        serverURL = Self.defaultServer
+        defaults.removeObject(forKey: Keys.server)
+        if keychain.token(for: host) == nil, let token = keychain.token(for: oldHost) {
+            try? keychain.setToken(token, for: host)
+        }
+        keychain.deleteToken(for: oldHost)
     }
 
     private enum Keys {

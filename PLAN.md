@@ -11,7 +11,7 @@ Remaining before go-live:
 ## 1. Where the project is today
 
 - Static site (`index.html`, `style.css`, `script.js`) plus Cloudflare Pages Functions in `functions/api/`.
-- Deployed at https://rephrase-eey.pages.dev/ via GitHub integration, no build step, no `package.json`.
+- Deployed at https://rephrase.aliaksei.xyz/ (also https://rephrase-eey.pages.dev/) via GitHub integration, no build step, no `package.json`.
 - Four endpoints, all backed by DeepL: `rephrase` (DeepL Write), `translate`, `usage`, and a leftover `hello`.
 - Input is a plain `<textarea>`. Output is a `<div>` with word-level diff underlines (via the `diff` CDN library).
 - Every keystroke triggers a request after a 1.5 s debounce.
