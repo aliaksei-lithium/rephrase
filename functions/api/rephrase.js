@@ -1,6 +1,6 @@
 import { error, json } from '../lib/http.js';
 import { availableModels, DEFAULT_MODEL_ID, findModel } from '../lib/models.js';
-import { buildSystemPrompt, cleanOutput, LANGUAGES, MODES, STYLES, TONES, wrapText } from '../lib/prompts.js';
+import { buildSystemPrompt, cleanOutput, FORMATS, LANGUAGES, MODES, STYLES, TONES, wrapText } from '../lib/prompts.js';
 import { streamFor, UpstreamError } from '../lib/providers.js';
 
 const MAX_CHARS = 12_000;
@@ -11,12 +11,13 @@ function pick(value, allowed, fallback) {
 
 /**
  * POST /api/rephrase
- * body: { text, mode, style, tone, model, stream }
- *   text   Markdown string (required)
+ * body: { text, mode, style, tone, language, format, model, stream }
+ *   text   Markdown string, or plain text with format "plain" (required)
  *   mode   "simple" | "default"
  *   style  "keep" | "casual" | "business" | "academic"
  *   tone   "keep" | "friendly" | "confident" | "diplomatic" | "enthusiastic"
  *   language "auto" | "en" | "de"   output language (auto keeps the input language)
+ *   format "markdown" (default) | "plain"   plain: input and output are plain text, no Markdown
  *   model  one of /api/models ids
  *   stream true (default) -> text/event-stream of {type:"delta"|"done"|"error"|"info"}
  *          false -> JSON { text, model, provider, usage }
@@ -39,13 +40,14 @@ export async function onRequestPost(context) {
     const style = pick(body.style, STYLES, 'keep');
     const tone = pick(body.tone, TONES, 'keep');
     const language = pick(body.language, LANGUAGES, 'auto');
+    const format = pick(body.format, FORMATS, 'markdown');
 
     const available = availableModels(env);
     if (!available.length) return error('No AI provider is configured (set ANTHROPIC_API_KEY or the AI binding)', 500);
     const requestedId = body.model || env.ANTHROPIC_MODEL || DEFAULT_MODEL_ID;
     const model = available.some((m) => m.id === requestedId) ? findModel(requestedId) : findModel(available[0].id);
 
-    const system = buildSystemPrompt({ mode, style, tone, language });
+    const system = buildSystemPrompt({ mode, style, tone, language, format });
     const user = wrapText(text);
     const wantStream = body.stream !== false;
 
