@@ -9,7 +9,10 @@ enum Onboarding {
     /// Show the guide until it was finished once, and again whenever Accessibility access is missing
     /// (ad-hoc builds lose it on every rebuild).
     static var shouldShowAtLaunch: Bool {
-        !UserDefaults.standard.bool(forKey: doneKey) || !AXIsProcessTrusted()
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["REPHRASE_DEMO_TEXT"] != nil { return false }
+        #endif
+        return !UserDefaults.standard.bool(forKey: doneKey) || !AXIsProcessTrusted()
     }
 
     static func markDone() {

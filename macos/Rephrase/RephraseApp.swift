@@ -10,6 +10,9 @@ struct RephraseApp: App {
         _model = State(initialValue: model)
         rewriter = RewriteController(app: model)
         rewriter.registerHotkeys()
+        #if DEBUG
+        DemoMode.runIfRequested(app: model)
+        #endif
     }
 
     var body: some Scene {
