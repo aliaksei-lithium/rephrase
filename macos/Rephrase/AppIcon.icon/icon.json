@@ -1,0 +1,36 @@
+{
+  "fill" : {
+    "linear-gradient" : [
+      "extended-srgb:0.16000,0.52000,1.00000,1.00000",
+      "extended-srgb:0.00000,0.30000,0.76000,1.00000"
+    ]
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "image-name" : "Sparkle.svg",
+          "name" : "Sparkle"
+        },
+        {
+          "image-name" : "Lines.svg",
+          "name" : "Lines",
+          "opacity" : 0.92
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.4
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : [
+      "macOS"
+    ]
+  }
+}

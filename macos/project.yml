@@ -35,10 +35,13 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.rephrase.mac
         PRODUCT_NAME: Rephrase
+        # Icon Composer icon (Rephrase/AppIcon.icon): Liquid Glass with light, dark and tinted variants.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     info:
       path: Rephrase/Info.plist
       properties:
         CFBundleDisplayName: Rephrase
+        CFBundleIconName: AppIcon
         LSUIElement: true
         LSApplicationCategoryType: public.app-category.productivity
         NSAppTransportSecurity:
