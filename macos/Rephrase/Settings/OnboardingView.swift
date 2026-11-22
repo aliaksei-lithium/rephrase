@@ -62,7 +62,9 @@ struct OnboardingView: View {
                     done: signedIn
                 ) {
                     HStack {
-                        if model.demoAvailable == true {
+                        if signedIn {
+                            Button(model.isDemo ? "Leave Demo" : "Sign Out") { model.signOut() }
+                        } else if model.demoAvailable == true {
                             Button("Try Demo") { Task { await model.startDemo() } }
                                 .disabled(model.isBusy)
                         }

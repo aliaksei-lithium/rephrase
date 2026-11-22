@@ -27,9 +27,9 @@ Select text in any app and press:
 
 - **⌃⌥C** to see the rewrite in a popup next to it. Change the mode, style, tone or language there, then press Enter to replace the text.
 - **⌃⌥X** to replace it straight away with your default settings. ⌘Z undoes it.
-- **⌃⌥Z** to translate it into your default language (the source language is detected) in a popup. Enter replaces, ⌘C copies. Pick the default language in Settings › General › Translate. Needs a Google Translate key on the server and a password sign-in.
+- **⌃⌥Z** to translate it into your default language (the source language is detected) in a popup. Enter replaces, ⌘C copies. It remembers the last language you picked in the popup; you can also set it in Settings › General › Translate. Needs a Google Translate key on the server and a password sign-in.
 
-Opening Rephrase shows its window with your setup status, the shortcuts and the version. The same actions are in the menu bar menu, and every shortcut can be changed in Settings.
+Opening Rephrase shows its window with your setup status, the shortcuts and the version. Sign out there, in the menu bar menu or in Settings. The same actions are in the menu bar menu, and every shortcut can be changed in Settings.
 
 It needs only the Accessibility permission, to read the selection and paste the result. It never watches what you type.
 

@@ -99,9 +99,7 @@ private struct GeneralSettings: View {
                 }
             }
 
-            if model.canTranslate {
-                TranslateSettings()
-            }
+            TranslateSettings()
         }
         .formStyle(.grouped)
         .onAppear { server = model.serverURL }
@@ -161,7 +159,7 @@ private struct TranslateSettings: View {
 
     var body: some View {
         @Bindable var model = model
-        let languages = model.translateLanguages
+        let languages = model.translateLanguages.isEmpty ? TranslateLanguage.common : model.translateLanguages
 
         Section {
             Picker("Translate to", selection: $model.translateOptions.target) {
@@ -180,7 +178,9 @@ private struct TranslateSettings: View {
         } header: {
             Text("Translate")
         } footer: {
-            Text("The source language is detected. Uses Google Translate on the server.")
+            Text(model.canTranslate
+                ? "Used by ⌃⌥Z. The source language is detected. Picking a language in the popup also makes it the default."
+                : "Translation needs a password sign-in and a Google Translate key on the server.")
                 .foregroundStyle(.secondary)
         }
         .task { await model.loadTranslateLanguages() }

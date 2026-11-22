@@ -81,3 +81,24 @@ struct TranslateModelTests {
         #expect(catalog.translate == true)
     }
 }
+
+@Suite struct TranslateOptionsTests {
+    @Test func rememberKeepsDistinctFallback() {
+        var options = TranslateOptions(target: "en", alternate: "de")
+        options.remember(target: "fr")
+        #expect(options == TranslateOptions(target: "fr", alternate: "de"))
+        options.remember(target: "de")
+        #expect(options == TranslateOptions(target: "de", alternate: nil))
+    }
+
+    @Test func retargetReportsPick() {
+        let model = TranslateModel(original: "x", options: .init(target: "en"), languages: []) {
+            throw APIError.message("offline")
+        }
+        var picked: String?
+        model.onRetarget = { picked = $0 }
+        model.retarget("ja")
+        #expect(picked == "ja")
+        model.cancel()
+    }
+}

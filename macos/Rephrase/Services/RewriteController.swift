@@ -151,6 +151,7 @@ final class RewriteController {
         )
         model.onClose = { [weak popup] in popup?.close() }
         model.onError = { [app] error in app.handleRequestError(error) }
+        model.onRetarget = { [app] code in app.translateOptions.remember(target: code) }
         return model
     }
 

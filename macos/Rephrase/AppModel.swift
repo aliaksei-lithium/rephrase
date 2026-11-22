@@ -227,6 +227,12 @@ struct TranslateOptions: Equatable {
         )
     }
 
+    /// The language last picked in the popup becomes the default. The fallback stays unless it is now the same language.
+    mutating func remember(target code: String) {
+        target = code
+        if alternate == code { alternate = nil }
+    }
+
     func save(to defaults: UserDefaults) {
         defaults.set(target, forKey: "translateTarget")
         defaults.set(alternate, forKey: "translateAlternate")

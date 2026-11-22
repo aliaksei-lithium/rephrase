@@ -170,6 +170,11 @@ struct TranslateLanguage: Decodable, Equatable, Identifiable, Hashable {
     let name: String
 
     var id: String { code }
+
+    /// Shown until the server's list has loaded (or when it can't translate yet).
+    static let common: [TranslateLanguage] = ["ar", "zh-CN", "cs", "nl", "en", "fr", "de", "it", "ja", "ko", "pl", "pt", "ru", "es", "tr", "uk"]
+        .map { TranslateLanguage(code: $0, name: Locale(identifier: "en").localizedString(forIdentifier: $0) ?? $0) }
+        .sorted { $0.name < $1.name }
 }
 
 struct LoginResponse: Decodable {
