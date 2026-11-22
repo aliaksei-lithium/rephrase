@@ -27,7 +27,9 @@ Select text in any app and press:
 
 - **⌃⌥C** to see the rewrite in a popup next to it. Change the mode, style, tone or language there, then press Enter to replace the text.
 - **⌃⌥X** to replace it straight away with your default settings. ⌘Z undoes it.
-- **⌃⌥Z** to translate it into your default language (the source language is detected) in a popup. Enter replaces, ⌘C copies. Needs a Google Translate key on the server and a password sign-in.
+- **⌃⌥Z** to translate it into your default language (the source language is detected) in a popup. Enter replaces, ⌘C copies. Pick the default language in Settings › General › Translate. Needs a Google Translate key on the server and a password sign-in.
+
+Opening Rephrase shows its window with your setup status, the shortcuts and the version. The same actions are in the menu bar menu, and every shortcut can be changed in Settings.
 
 It needs only the Accessibility permission, to read the selection and paste the result. It never watches what you type.
 
@@ -39,7 +41,7 @@ It needs only the Accessibility permission, to read the selection and paste the 
 xattr -dr com.apple.quarantine /Applications/Rephrase.app
 ```
 
-The setup guide then asks you to sign in to your Rephrase server, or to try the demo without a password, and to allow Accessibility access.
+The Rephrase window then asks you to sign in to your Rephrase server, or to try the demo without a password, and to allow Accessibility access.
 
 ## Web app
 
