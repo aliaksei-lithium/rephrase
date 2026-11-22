@@ -118,3 +118,4 @@ enum AppInfo {
         return build.map { "\(short) (\($0))" } ?? short
     }
 }
+

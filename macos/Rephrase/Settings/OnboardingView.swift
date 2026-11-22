@@ -6,13 +6,13 @@ enum Onboarding {
     static let windowID = "onboarding"
     private static let doneKey = "onboardingDone"
 
-    /// Show the guide until it was finished once, and again whenever Accessibility access is missing
-    /// (ad-hoc builds lose it on every rebuild).
+    /// The window opens whenever the app is opened, and again when it is opened while running
+    /// (SwiftUI reopens it), so there is always a way in besides the menu bar icon.
     static var shouldShowAtLaunch: Bool {
         #if DEBUG
         if ProcessInfo.processInfo.environment["REPHRASE_DEMO_TEXT"] != nil { return false }
         #endif
-        return !UserDefaults.standard.bool(forKey: doneKey) || !AXIsProcessTrusted()
+        return true
     }
 
     static func markDone() {
@@ -93,12 +93,15 @@ struct OnboardingView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     ShortcutLine(name: .rewriteWithPopup, text: "rewrite in a popup")
                     ShortcutLine(name: .rewriteInPlace, text: "rewrite and replace with your defaults")
+                    if model.canTranslate {
+                        ShortcutLine(name: .translate, text: "translate into your default language")
+                    }
                 }
                 .padding(.leading, 38)
             }
 
             HStack {
-                Text("Shortcuts can be changed in Settings.")
+                Text("Shortcuts can be changed in Settings. Version \(AppInfo.version)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
