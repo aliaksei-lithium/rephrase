@@ -33,7 +33,7 @@ It needs only the Accessibility permission, to read the selection and paste the 
 
 ### Install
 
-Download **[Rephrase 0.1.0](https://github.com/aliaksei-lithium/rephrase/releases/download/v0.1.0/Rephrase-0.1.0.dmg)** (or any version from [Releases](https://github.com/aliaksei-lithium/rephrase/releases)) and drag Rephrase to Applications. The app is not notarized, so the first time either right-click it and choose **Open**, or run:
+**[Download Rephrase](https://github.com/aliaksei-lithium/rephrase/releases/latest)**. The app is not notarized, so the first time either right-click it and choose **Open**, or run:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/Rephrase.app
