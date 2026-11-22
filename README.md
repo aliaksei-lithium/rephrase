@@ -56,7 +56,7 @@ Paste formatted text from Slack, Gmail or Docs. The result keeps bold, lists, co
 - **Fix** corrects typos, grammar and punctuation only. **Edit** also smooths awkward phrasing. **Rewrite** says it again in more natural words.
 - Optional style (casual, business, academic) and tone (friendly, confident, diplomatic, enthusiastic).
 - Keeps the language of the text, or writes in English or German.
-- Translates in the macOS app: with Google Translate when signed in with the password, or with Apple's translation on your Mac, which needs no sign-in and keeps the text on the Mac.
+- Translates in the macOS app: with Google Translate when signed in with the password, or with Apple's translation on your Mac, which needs no sign-in and keeps the text on the Mac (download its languages in System Settings › General › Language & Region).
 - Claude Sonnet 5 by default; Opus 5, Haiku 4.5 or the free Gemma model on Workers AI are one click away.
 - Runs on your own Cloudflare account behind a password, and keeps no copy of your text.
 

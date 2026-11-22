@@ -1,6 +1,5 @@
 import AppKit
 import Observation
-@preconcurrency import Translation
 
 /// State of one translate popup: the selection, the target language, and the translation.
 @Observable
@@ -15,9 +14,8 @@ final class TranslateModel {
     var options: TranslateOptions
     let engine: TranslateEngine
     let languages: [TranslateLanguage]
-    /// Drives the view's `.translationTask` for Apple: a new value starts a translation, and macOS
-    /// asks to download the languages first when needed.
-    private(set) var appleConfiguration: TranslationSession.Configuration?
+    /// Apple's languages for this pair are not downloaded yet; the popup offers to open System Settings.
+    private(set) var needsLanguageDownload = false
     private(set) var result = ""
     private(set) var phase: Phase = .loading
     /// Detected language of the selection.
@@ -61,6 +59,7 @@ final class TranslateModel {
         source = nil
         usedTarget = nil
         phase = .loading
+        needsLanguageDownload = false
         if engine == .apple {
             runApple()
             return
@@ -99,34 +98,36 @@ final class TranslateModel {
             task = Task {
                 let status = await AppleTranslation.status(from: detected, to: target)
                 guard !Task.isCancelled else { return }
-                if status == .unsupported {
+                switch status {
+                case .unsupported:
                     phase = .failed("Apple can't translate \(name(of: detected)) into \(name(of: target)).")
-                    return
-                }
-                let configuration = TranslationSession.Configuration(
-                    source: AppleTranslation.language(detected),
-                    target: AppleTranslation.language(target)
-                )
-                if appleConfiguration == configuration {
-                    appleConfiguration?.invalidate()
-                } else {
-                    appleConfiguration = configuration
+                case .supported:
+                    // Not downloaded. The system download prompt would take focus from the popup and
+                    // close it, so the languages are downloaded in System Settings instead.
+                    needsLanguageDownload = true
+                    phase = .failed("Download \(name(of: detected)) and \(name(of: target)) for Apple's translation in System Settings › General › Language & Region › Translation Languages, then try again.")
+                default:
+                    do {
+                        let text = try await AppleTranslation.translate(original, from: detected, to: target)
+                        try Task.checkCancellation()
+                        result = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                        phase = result.isEmpty ? .failed("Apple Translation returned no text.") : .done
+                    } catch is CancellationError {
+                        // The popup closed or a newer run took over.
+                    } catch {
+                        if Task.isCancelled { return }
+                        phase = .failed(error.localizedDescription)
+                    }
                 }
             }
         }
     }
 
-    /// Called by the view's `.translationTask` with a session for `appleConfiguration`.
-    func translate(with session: TranslationSession) async {
-        do {
-            let response = try await session.translate(original)
-            guard phase == .loading else { return }
-            result = response.targetText.trimmingCharacters(in: .whitespacesAndNewlines)
-            phase = result.isEmpty ? .failed("Apple Translation returned no text.") : .done
-        } catch {
-            guard phase == .loading, !Task.isCancelled else { return }
-            phase = .failed(error.localizedDescription)
+    func openTranslationLanguages() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.Localization-Settings.extension") {
+            NSWorkspace.shared.open(url)
         }
+        onClose?()
     }
 
     /// Picking another target in the popup re-runs without the alternate, so the pick is what you get,

@@ -51,6 +51,13 @@ enum AppleTranslation {
         await LanguageAvailability().status(from: Locale.Language(identifier: source), to: Locale.Language(identifier: target))
     }
 
+    /// Translates with languages that are already downloaded; throws `notInstalled` otherwise.
+    /// The session lives only inside this call, off the main actor.
+    @concurrent nonisolated static func translate(_ text: String, from source: String, to target: String) async throws -> String {
+        let session = TranslationSession(installedSource: Locale.Language(identifier: source), target: Locale.Language(identifier: target))
+        return try await session.translate(text).targetText
+    }
+
     /// Languages Apple can translate, with English names like the Google list.
     @concurrent nonisolated static func supportedLanguages() async -> [TranslateLanguage] {
         let english = Locale(identifier: "en")
