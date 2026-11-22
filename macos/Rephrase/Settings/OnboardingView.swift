@@ -12,7 +12,7 @@ enum Onboarding {
         #if DEBUG
         if ProcessInfo.processInfo.environment["REPHRASE_DEMO_TEXT"] != nil { return false }
         #endif
-        return true
+        return !AppModel.isRunningTests
     }
 
     static func markDone() {
@@ -95,9 +95,7 @@ struct OnboardingView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     ShortcutLine(name: .rewriteWithPopup, text: "rewrite in a popup")
                     ShortcutLine(name: .rewriteInPlace, text: "rewrite and replace with your defaults")
-                    if model.canTranslate {
-                        ShortcutLine(name: .translate, text: "translate into your default language")
-                    }
+                    ShortcutLine(name: .translate, text: "translate into your default language")
                 }
                 .padding(.leading, 38)
             }

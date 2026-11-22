@@ -1,5 +1,6 @@
 import AppKit
 import Observation
+@preconcurrency import Translation
 
 /// State of one translate popup: the selection, the target language, and the translation.
 @Observable
@@ -12,7 +13,11 @@ final class TranslateModel {
 
     let original: String
     var options: TranslateOptions
+    let engine: TranslateEngine
     let languages: [TranslateLanguage]
+    /// Drives the view's `.translationTask` for Apple: a new value starts a translation, and macOS
+    /// asks to download the languages first when needed.
+    private(set) var appleConfiguration: TranslationSession.Configuration?
     private(set) var result = ""
     private(set) var phase: Phase = .loading
     /// Detected language of the selection.
@@ -31,15 +36,16 @@ final class TranslateModel {
     private let makeClient: () throws -> RephraseClient
     private var task: Task<Void, Never>?
 
-    init(original: String, options: TranslateOptions, languages: [TranslateLanguage], makeClient: @escaping () throws -> RephraseClient) {
+    init(original: String, options: TranslateOptions, engine: TranslateEngine = .google, languages: [TranslateLanguage], makeClient: @escaping () throws -> RephraseClient) {
         self.original = original
         self.options = options
+        self.engine = engine
         self.languages = languages
         self.makeClient = makeClient
     }
 
     var canReplace: Bool { phase == .done && !result.isEmpty && onReplace != nil }
-    /// Google detected the target language and there is no alternate, so nothing changed.
+    /// The text was already in the target language and there is no alternate, so nothing changed.
     var isUnchanged: Bool { phase == .done && result == original.trimmingCharacters(in: .whitespacesAndNewlines) }
 
     func name(of code: String?) -> String {
@@ -55,6 +61,10 @@ final class TranslateModel {
         source = nil
         usedTarget = nil
         phase = .loading
+        if engine == .apple {
+            runApple()
+            return
+        }
         let request = TranslateRequest(text: original, target: options.target, alternate: options.alternate)
         task = Task {
             do {
@@ -71,6 +81,51 @@ final class TranslateModel {
                 phase = .failed(error.localizedDescription)
                 onError?(error)
             }
+        }
+    }
+
+    private func runApple() {
+        switch AppleTranslation.plan(original, options: options) {
+        case .unknownLanguage:
+            phase = .failed("Couldn't tell which language this is.")
+        case .unchanged(let detected):
+            source = detected
+            usedTarget = options.target
+            result = original.trimmingCharacters(in: .whitespacesAndNewlines)
+            phase = .done
+        case .translate(let detected, let target):
+            source = detected
+            usedTarget = target
+            task = Task {
+                let status = await AppleTranslation.status(from: detected, to: target)
+                guard !Task.isCancelled else { return }
+                if status == .unsupported {
+                    phase = .failed("Apple can't translate \(name(of: detected)) into \(name(of: target)).")
+                    return
+                }
+                let configuration = TranslationSession.Configuration(
+                    source: AppleTranslation.language(detected),
+                    target: AppleTranslation.language(target)
+                )
+                if appleConfiguration == configuration {
+                    appleConfiguration?.invalidate()
+                } else {
+                    appleConfiguration = configuration
+                }
+            }
+        }
+    }
+
+    /// Called by the view's `.translationTask` with a session for `appleConfiguration`.
+    func translate(with session: TranslationSession) async {
+        do {
+            let response = try await session.translate(original)
+            guard phase == .loading else { return }
+            result = response.targetText.trimmingCharacters(in: .whitespacesAndNewlines)
+            phase = result.isEmpty ? .failed("Apple Translation returned no text.") : .done
+        } catch {
+            guard phase == .loading, !Task.isCancelled else { return }
+            phase = .failed(error.localizedDescription)
         }
     }
 

@@ -159,9 +159,16 @@ private struct TranslateSettings: View {
 
     var body: some View {
         @Bindable var model = model
-        let languages = model.translateLanguages.isEmpty ? TranslateLanguage.common : model.translateLanguages
+        let languages = model.translateLanguages(for: model.translateEngine)
 
         Section {
+            if model.canTranslate {
+                Picker("Translate with", selection: $model.translateOptions.engine) {
+                    Text("Google Translate").tag(TranslateEngine.google)
+                    Text("Apple, on this Mac").tag(TranslateEngine.apple)
+                }
+                .pickerStyle(.segmented)
+            }
             Picker("Translate to", selection: $model.translateOptions.target) {
                 missingTag(model.translateOptions.target, in: languages)
                 ForEach(languages) { Text($0.name).tag($0.code) }
@@ -178,12 +185,17 @@ private struct TranslateSettings: View {
         } header: {
             Text("Translate")
         } footer: {
-            Text(model.canTranslate
-                ? "Used by ⌃⌥Z. The source language is detected. Picking a language in the popup also makes it the default."
-                : "Translation needs a password sign-in and a Google Translate key on the server.")
-                .foregroundStyle(.secondary)
+            Text(footer).foregroundStyle(.secondary)
         }
         .task { await model.loadTranslateLanguages() }
+    }
+
+    private var footer: String {
+        let engine = model.translateEngine == .apple
+            ? "Apple translates on this Mac; the first time it uses a language, macOS asks to download it."
+            : "Google Translate runs on the server."
+        let googleHint = model.canTranslate || model.translateEngine == .google ? "" : " Sign in with the password to use Google Translate."
+        return "Used by ⌃⌥Z. \(engine) Picking a language in the popup also makes it the default.\(googleHint)"
     }
 
     @ViewBuilder private func missingTag(_ code: String, in languages: [TranslateLanguage]) -> some View {

@@ -102,3 +102,40 @@ struct TranslateModelTests {
         model.cancel()
     }
 }
+
+@Suite struct AppleTranslationTests {
+    @Test func detectsAndPlans() {
+        let german = "Ich habe gestern den Bericht geschickt, aber die Zahlen waren falsch."
+        #expect(AppleTranslation.plan(german, options: .init(target: "en")) == .translate(source: "de", target: "en"))
+    }
+
+    @Test func alreadyInTargetUsesAlternate() {
+        let english = "I sent the report yesterday, but the numbers were wrong."
+        #expect(AppleTranslation.plan(english, options: .init(target: "en-US", alternate: "de")) == .translate(source: "en", target: "de"))
+        #expect(AppleTranslation.plan(english, options: .init(target: "en")) == .unchanged(source: "en"))
+    }
+
+    @Test func comparesLanguages() {
+        #expect(AppleTranslation.sameLanguage("en", "en-US"))
+        #expect(AppleTranslation.sameLanguage("zh-Hans", "zh-CN"))
+        #expect(!AppleTranslation.sameLanguage("zh-Hans", "zh-TW"))
+        #expect(!AppleTranslation.sameLanguage("de", "en"))
+    }
+
+    @Test func engineIsSaved() {
+        let defaults = UserDefaults(suiteName: "AppleTranslationTests")!
+        defaults.removePersistentDomain(forName: "AppleTranslationTests")
+        TranslateOptions(target: "de", engine: .apple).save(to: defaults)
+        #expect(TranslateOptions(from: defaults).engine == .apple)
+    }
+
+    @Test func unchangedAppleRunNeedsNoNetwork() {
+        let model = TranslateModel(original: "I sent the report yesterday, but the numbers were wrong.", options: .init(target: "en"), engine: .apple, languages: []) {
+            throw APIError.message("no network for Apple")
+        }
+        model.run()
+        #expect(model.phase == .done)
+        #expect(model.isUnchanged)
+        #expect(model.source == "en")
+    }
+}

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Rephrase tool on Cloudflare Pages: static frontend plus Pages Functions that call Claude (Anthropic Messages API, optionally through Cloudflare AI Gateway) or Workers AI. A native macOS menu bar app in `macos/` uses the same API.
+Rephrase tool on Cloudflare Pages: static frontend plus Pages Functions that call Claude (Anthropic Messages API, optionally through Cloudflare AI Gateway) or Workers AI. A native macOS app in `macos/` (a window that opens with the app, a menu bar icon, global shortcuts) uses the same API.
 
 ## Structure
 
@@ -28,6 +28,7 @@ Rephrase tool on Cloudflare Pages: static frontend plus Pages Functions that cal
   - `project.yml` - XcodeGen spec; the `.xcodeproj` is generated and git-ignored
   - `Rephrase/` - app sources; `RephraseTests/` - Swift Testing tests
   - `scripts/release.sh` - Release archive and DMG in `macos/dist/` (ad-hoc unless `CODESIGN_IDENTITY`; notarizes with `NOTARY_PROFILE`)
+  - `Rephrase/Services/AppleTranslation.swift` - on-device translation (Translation + NaturalLanguage) for ⌃⌥Z
   - `Rephrase/DemoMode.swift` - Debug-only staged popup for README screenshots (window behind everything, captured with `screencapture -l`)
   - `scripts/install.sh` - Release build into `~/Applications` (separate from the Debug build that tests replace); `REPHRASE_TEAM_ID` signs with a team so Accessibility access survives reinstalls
 - `docs/building.md` - build, deploy, API and release notes; `docs/images/` - README images
@@ -41,7 +42,7 @@ Rephrase tool on Cloudflare Pages: static frontend plus Pages Functions that cal
 - Model ids are the exact strings from `functions/lib/models.js`. `output_config.effort` is only sent for models that support it.
 - `/api/rephrase` takes `format: "markdown"` (default, web app) or `"plain"` (macOS app, selections from other apps).
 - The frontend sends Markdown and renders Markdown; the diff is computed on plain text and applied to the rendered DOM.
-- Translation is secondary and macOS-only: `/api/models` advertises `translate`, demo sessions are refused, and the web app has no translate UI.
+- Translation is secondary and macOS-only: `/api/models` advertises `translate` (Google, password sessions only; demo sessions are refused), and the web app has no translate UI. The macOS app falls back to Apple's Translation framework (`AppleTranslation.swift`) when Google isn't available, and password users can pick the engine in Settings.
 - Demo sessions must never reach Anthropic or exceed the Workers AI free tier: `rephrase.js` forces `DEMO_MODEL_ID`, skips the fallback and reserves budget via `reserveDemo` before calling the model.
 - Secrets never go in `wrangler.toml`. Local: `.env` (symlink to `local.env`) and `.env.local`. Both are git-ignored; so is `*.env`.
 - macOS app: `cd macos && xcodegen generate`, then build in Xcode or `xcodebuild -scheme Rephrase -derivedDataPath build test`. Add `TEST_RUNNER_REPHRASE_BASE_URL=http://localhost:8788 TEST_RUNNER_APP_PASSWORD=...` to also run the live sign-in test.

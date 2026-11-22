@@ -29,7 +29,7 @@ Cloudflare Pages builds from GitHub with no build command; `wrangler.toml` sets 
 | `ANTHROPIC_API_KEY` | Claude; leave it out to use only Workers AI |
 | `AUTH_SECRET` | optional, signs session tokens (defaults to `APP_PASSWORD`) |
 | `ANTHROPIC_BASE_URL` | optional, routes Claude calls through Cloudflare AI Gateway |
-| `GOOGLE_TRANSLATE_API_KEY` | optional, Google Cloud Translation (Basic v2) key; enables `/api/translate` and the macOS ⌃⌥Z shortcut. Restrict it to the Cloud Translation API |
+| `GOOGLE_TRANSLATE_API_KEY` | optional, Google Cloud Translation (Basic v2) key; enables `/api/translate`, so the macOS app can translate with Google (without it, ⌃⌥Z uses Apple's on-device translation). Restrict it to the Cloud Translation API |
 
 ### Demo
 

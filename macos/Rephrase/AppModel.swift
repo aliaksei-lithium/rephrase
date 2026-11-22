@@ -12,6 +12,7 @@ final class AppModel {
     }
 
     static let defaultServer = "https://rephrase.aliaksei.xyz"
+    static let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
     /// Earlier defaults. A saved value equal to one of these follows the current default.
     static let legacyServers = ["https://rephrase-eey.pages.dev"]
 
@@ -37,9 +38,22 @@ final class AppModel {
     /// Languages for the translate pickers, loaded from /api/translate once the server says it can translate.
     private(set) var translateLanguages: [TranslateLanguage] = []
 
-    /// Signed in with the password and the server has a Google Translate key.
+    /// Languages Apple's on-device translation supports.
+    private(set) var appleLanguages: [TranslateLanguage] = []
+
+    /// Signed in with the password and the server has a Google Translate key, so Google can be used.
     var canTranslate: Bool {
         if case .signedIn(_, demo: false) = auth { catalog?.translate == true } else { false }
+    }
+
+    /// Google when it is available and chosen; otherwise Apple, which works signed out and in the demo.
+    var translateEngine: TranslateEngine {
+        canTranslate && translateOptions.engine == .google ? .google : .apple
+    }
+
+    func translateLanguages(for engine: TranslateEngine) -> [TranslateLanguage] {
+        let list = engine == .google ? translateLanguages : appleLanguages
+        return list.isEmpty ? TranslateLanguage.common : list
     }
 
     private let defaults: UserDefaults
@@ -52,7 +66,13 @@ final class AppModel {
         options = RephraseOptions(from: defaults)
         translateOptions = TranslateOptions(from: defaults)
         migrateLegacyServer()
-        Task { await refresh() }
+        // Unit tests run inside the app: don't read the real keychain (macOS would block on an
+        // access prompt for the Debug build) or call the server.
+        guard !Self.isRunningTests else { return }
+        Task {
+            await refresh()
+            await loadTranslateLanguages()
+        }
     }
 
     var statusText: String {
@@ -62,6 +82,10 @@ final class AppModel {
         case .signedIn(_, demo: true): "Demo on \(host) (Gemma only)"
         case .signedIn: "Signed in to \(host)"
         }
+    }
+
+    var isSignedIn: Bool {
+        if case .signedIn = auth { true } else { false }
     }
 
     var isDemo: Bool {
@@ -146,6 +170,9 @@ final class AppModel {
 
     /// Best effort: without the list the pickers still show the saved codes.
     func loadTranslateLanguages() async {
+        if appleLanguages.isEmpty {
+            appleLanguages = await AppleTranslation.supportedLanguages()
+        }
         guard canTranslate, translateLanguages.isEmpty else { return }
         translateLanguages = (try? await client().translateLanguages()) ?? []
     }
@@ -214,16 +241,20 @@ struct TranslateOptions: Equatable {
     var target: String
     /// When the text is already in `target`, translate into this one instead. Nil: show it unchanged.
     var alternate: String?
+    /// The engine chosen in Settings. Without Google (demo, signed out, no server key) Apple is used anyway.
+    var engine: TranslateEngine
 
-    init(target: String = TranslateOptions.systemLanguage, alternate: String? = nil) {
+    init(target: String = TranslateOptions.systemLanguage, alternate: String? = nil, engine: TranslateEngine = .google) {
         self.target = target
         self.alternate = alternate
+        self.engine = engine
     }
 
     init(from defaults: UserDefaults) {
         self.init(
             target: defaults.string(forKey: "translateTarget") ?? Self.systemLanguage,
-            alternate: defaults.string(forKey: "translateAlternate")
+            alternate: defaults.string(forKey: "translateAlternate"),
+            engine: defaults.string(forKey: "translateEngine").flatMap(TranslateEngine.init(rawValue:)) ?? .google
         )
     }
 
@@ -236,6 +267,7 @@ struct TranslateOptions: Equatable {
     func save(to defaults: UserDefaults) {
         defaults.set(target, forKey: "translateTarget")
         defaults.set(alternate, forKey: "translateAlternate")
+        defaults.set(engine.rawValue, forKey: "translateEngine")
     }
 
     /// The Mac's first preferred language, e.g. "en" or "de".
