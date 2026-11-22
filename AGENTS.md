@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Rephrase tool on Cloudflare Pages: static frontend plus Pages Functions that call Claude (Anthropic Messages API, optionally through Cloudflare AI Gateway) or Workers AI. A native macOS menu bar app in `macos/` uses the same API.
+Rephrase tool on Cloudflare Pages: static frontend plus Pages Functions that call Claude (Anthropic Messages API, optionally through Cloudflare AI Gateway) or Workers AI. A native macOS app in `macos/` (a window that opens with the app, a menu bar icon, global shortcuts) uses the same API.
 
 ## Structure
 
