@@ -1,5 +1,4 @@
 import SwiftUI
-import Translation
 
 struct TranslateView: View {
     @Bindable var model: TranslateModel
@@ -17,9 +16,6 @@ struct TranslateView: View {
         .frame(width: 440)
         .glassEffect(.regular, in: .rect(cornerRadius: 20))
         .padding(1)
-        .translationTask(model.appleConfiguration) { session in
-            await model.translate(with: session)
-        }
     }
 
     private var header: some View {
@@ -101,6 +97,9 @@ struct TranslateView: View {
                 Text(reason).font(.caption).foregroundStyle(.secondary).lineLimit(2)
             }
             Spacer()
+            if model.needsLanguageDownload {
+                Button("Open Language & Region…", action: model.openTranslationLanguages)
+            }
             if case .failed = model.phase {
                 Button("Retry", action: model.run)
                     .keyboardShortcut("r")
