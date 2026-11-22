@@ -98,6 +98,12 @@ private struct MenuContent: View {
         }
         .keyboardShortcut(",")
 
+        if case .signedIn = model.auth {
+            Button(model.isDemo ? "Leave Demo" : "Sign Out") {
+                model.signOut()
+            }
+        }
+
         Divider()
 
         Text("Version \(AppInfo.version)")
