@@ -4,12 +4,13 @@ Status: written 2026-11-21. Phases 1 to 5 and the repo housekeeping (section 7) 
 
 ## 1. What it does
 
-A menu bar app with no Dock icon. It never watches the keyboard. It only acts when you press one of its two global shortcuts:
+A menu bar app with no Dock icon. It never watches the keyboard. It only acts when you press one of its global shortcuts:
 
 | Shortcut (default) | Action |
 | --- | --- |
 | ⌃⌥C | Read the selected text in the front app and open a small popup next to it that streams the rewritten text. Enter replaces, ⌘C copies, Esc closes. Mode, style, tone, and language can be changed in the popup and the request re-runs. |
 | ⌃⌥X | Rewrite the selection with the default settings and replace it in place. A small "Rewriting..." badge shows near the selection; Esc cancels; ⌘Z in the app undoes the replace. |
+| ⌃⌥Z | Translate the selection into the default language (Google Translate via `/api/translate`, source detected) in a popup. Enter replaces, ⌘C copies, the language menu re-runs. Optional "if already in that language" fallback. |
 
 Both shortcuts can be changed in Settings.
 

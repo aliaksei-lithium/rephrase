@@ -29,6 +29,7 @@ Cloudflare Pages builds from GitHub with no build command; `wrangler.toml` sets 
 | `ANTHROPIC_API_KEY` | Claude; leave it out to use only Workers AI |
 | `AUTH_SECRET` | optional, signs session tokens (defaults to `APP_PASSWORD`) |
 | `ANTHROPIC_BASE_URL` | optional, routes Claude calls through Cloudflare AI Gateway |
+| `GOOGLE_TRANSLATE_API_KEY` | optional, Google Cloud Translation (Basic v2) key; enables `/api/translate` and the macOS ⌃⌥Z shortcut. Restrict it to the Cloud Translation API |
 
 ### Demo
 
@@ -64,8 +65,10 @@ All routes live under `/api`. Everything except `/api/auth/*` needs a session: t
 | `/api/auth/demo` | POST | `{ ok, token, demo, expires_at }` and sets the cookie; 404 when the demo is off |
 | `/api/auth/logout` | POST | clears the cookie |
 | `/api/auth/me` | GET | `{ authenticated, configured, demo, demo_available, expires_at }`, plus `demo_status` for demo sessions |
-| `/api/models` | GET | `{ models, default, modes, styles, tones, languages, formats }`; demo sessions get only Gemma and `demo, max_chars` |
+| `/api/models` | GET | `{ models, default, modes, styles, tones, languages, formats, translate }`; demo sessions get only Gemma and `demo, max_chars` |
 | `/api/rephrase` | POST | `{ text, mode, style, tone, language, format (markdown/plain), model, stream }` → SSE stream, or JSON with `stream: false`. Demo sessions get `demo: { left_for_you, budget_left }` in the result, or 429 with `code` `demo_limit` / `demo_client_limit` |
+| `/api/translate` | GET | `{ languages: [{ code, name }] }` (Google Translate languages) |
+| `/api/translate` | POST | `{ text, target, alternate? }` → `{ text, source, target }`; Google detects `source`, and `alternate` is used when the text is already in `target`. 503 `not_configured` without the key, 403 `demo_not_allowed` for demo sessions |
 
 ### Prompts
 

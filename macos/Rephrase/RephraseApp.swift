@@ -56,6 +56,12 @@ private struct MenuContent: View {
             rewriter.rewriteClipboard()
         }
 
+        if model.canTranslate {
+            Button("Translate Clipboard") {
+                Task { await rewriter.translateClipboard() }
+            }
+        }
+
         Divider()
 
         Button("Setup Guide…") {

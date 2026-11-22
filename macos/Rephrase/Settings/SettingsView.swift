@@ -97,6 +97,10 @@ private struct GeneralSettings: View {
                         .foregroundStyle(.secondary)
                 }
             }
+
+            if model.canTranslate {
+                TranslateSettings()
+            }
         }
         .formStyle(.grouped)
         .onAppear { server = model.serverURL }
@@ -136,11 +140,54 @@ private struct ShortcutSettings: View {
             Section {
                 KeyboardShortcuts.Recorder("Rewrite in popup", name: .rewriteWithPopup)
                 KeyboardShortcuts.Recorder("Rewrite and replace", name: .rewriteInPlace)
+                KeyboardShortcuts.Recorder("Translate", name: .translate)
             } footer: {
                 Text("macOS does not allow global shortcuts that use only Option or Option-Shift.")
                     .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
+    }
+}
+
+/// ⌃⌥Z defaults. Shown only when the server has a Google Translate key.
+private struct TranslateSettings: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        @Bindable var model = model
+        let languages = model.translateLanguages
+
+        Section {
+            Picker("Translate to", selection: $model.translateOptions.target) {
+                missingTag(model.translateOptions.target, in: languages)
+                ForEach(languages) { Text($0.name).tag($0.code) }
+            }
+            Picker("If already in that language", selection: $model.translateOptions.alternate) {
+                Text("Leave it").tag(String?.none)
+                if let alternate = model.translateOptions.alternate, !languages.contains(where: { $0.code == alternate }) {
+                    Text(Self.name(alternate)).tag(String?.some(alternate))
+                }
+                ForEach(languages.filter { $0.code != model.translateOptions.target }) {
+                    Text("Translate to \($0.name)").tag(String?.some($0.code))
+                }
+            }
+        } header: {
+            Text("Translate")
+        } footer: {
+            Text("The source language is detected. Uses Google Translate on the server.")
+                .foregroundStyle(.secondary)
+        }
+        .task { await model.loadTranslateLanguages() }
+    }
+
+    @ViewBuilder private func missingTag(_ code: String, in languages: [TranslateLanguage]) -> some View {
+        if !languages.contains(where: { $0.code == code }) {
+            Text(Self.name(code)).tag(code)
+        }
+    }
+
+    private static func name(_ code: String) -> String {
+        Locale.current.localizedString(forLanguageCode: code) ?? code.uppercased()
     }
 }

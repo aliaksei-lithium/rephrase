@@ -25,17 +25,26 @@ final class PopupPanel: NSPanel {
 /// Shows one popup at a time next to the selection and keeps it on screen as it grows.
 final class PopupController: NSObject, NSWindowDelegate {
     private var panel: PopupPanel?
-    private var model: PopupModel?
+    /// Cancels the request of the popup on screen.
+    private var cancel: (() -> Void)?
     private var anchor: CGRect = .zero
     private var placeAbove = false
 
     func show(_ model: PopupModel, near bounds: CGRect?) {
+        show(PopupView(model: model), near: bounds, cancel: model.cancel)
+    }
+
+    func show(_ model: TranslateModel, near bounds: CGRect?) {
+        show(TranslateView(model: model), near: bounds, cancel: model.cancel)
+    }
+
+    private func show(_ view: some View, near bounds: CGRect?, cancel: @escaping () -> Void) {
         close()
-        self.model = model
+        self.cancel = cancel
         anchor = bounds ?? CGRect(origin: NSEvent.mouseLocation, size: .zero)
         placeAbove = false
 
-        let host = NSHostingController(rootView: PopupView(model: model))
+        let host = NSHostingController(rootView: view)
         host.sizingOptions = [.preferredContentSize]
         let panel = PopupPanel()
         panel.contentViewController = host
@@ -51,8 +60,8 @@ final class PopupController: NSObject, NSWindowDelegate {
     func close() {
         guard let panel else { return }
         self.panel = nil
-        model?.cancel()
-        model = nil
+        cancel?()
+        cancel = nil
         panel.delegate = nil
         panel.orderOut(nil)
         panel.close()

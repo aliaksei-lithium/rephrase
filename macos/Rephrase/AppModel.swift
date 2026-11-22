@@ -30,6 +30,18 @@ final class AppModel {
         didSet { options.save(to: defaults) }
     }
 
+    var translateOptions: TranslateOptions {
+        didSet { translateOptions.save(to: defaults) }
+    }
+
+    /// Languages for the translate pickers, loaded from /api/translate once the server says it can translate.
+    private(set) var translateLanguages: [TranslateLanguage] = []
+
+    /// Signed in with the password and the server has a Google Translate key.
+    var canTranslate: Bool {
+        if case .signedIn(_, demo: false) = auth { catalog?.translate == true } else { false }
+    }
+
     private let defaults: UserDefaults
     private let keychain: KeychainStore
 
@@ -38,6 +50,7 @@ final class AppModel {
         self.keychain = keychain
         serverURL = defaults.string(forKey: Keys.server) ?? Self.defaultServer
         options = RephraseOptions(from: defaults)
+        translateOptions = TranslateOptions(from: defaults)
         migrateLegacyServer()
         Task { await refresh() }
     }
@@ -79,6 +92,7 @@ final class AppModel {
             try keychain.setToken(response.token, for: host)
             auth = .signedIn(expiresAt: response.expiresAt)
             catalog = try await client().catalog()
+            await loadTranslateLanguages()
         }
     }
 
@@ -121,12 +135,19 @@ final class AppModel {
             if me.authenticated {
                 auth = .signedIn(expiresAt: me.expiresAt, demo: me.demo ?? false)
                 catalog = try await client.catalog()
+                await loadTranslateLanguages()
             } else {
                 keychain.deleteToken(for: host)
                 auth = .signedOut
                 catalog = nil
             }
         }
+    }
+
+    /// Best effort: without the list the pickers still show the saved codes.
+    func loadTranslateLanguages() async {
+        guard canTranslate, translateLanguages.isEmpty else { return }
+        translateLanguages = (try? await client().translateLanguages()) ?? []
     }
 
     private func run(_ work: () async throws -> Void) async {
@@ -184,5 +205,35 @@ struct RephraseOptions: Equatable {
         defaults.set(tone, forKey: "tone")
         defaults.set(language, forKey: "language")
         defaults.set(model, forKey: "model")
+    }
+}
+
+/// Settings for ⌃⌥Z. Codes are Google Translate language codes.
+struct TranslateOptions: Equatable {
+    /// Translate into this language.
+    var target: String
+    /// When the text is already in `target`, translate into this one instead. Nil: show it unchanged.
+    var alternate: String?
+
+    init(target: String = TranslateOptions.systemLanguage, alternate: String? = nil) {
+        self.target = target
+        self.alternate = alternate
+    }
+
+    init(from defaults: UserDefaults) {
+        self.init(
+            target: defaults.string(forKey: "translateTarget") ?? Self.systemLanguage,
+            alternate: defaults.string(forKey: "translateAlternate")
+        )
+    }
+
+    func save(to defaults: UserDefaults) {
+        defaults.set(target, forKey: "translateTarget")
+        defaults.set(alternate, forKey: "translateAlternate")
+    }
+
+    /// The Mac's first preferred language, e.g. "en" or "de".
+    static var systemLanguage: String {
+        Locale.preferredLanguages.first.flatMap { Locale(identifier: $0).language.languageCode?.identifier } ?? "en"
     }
 }

@@ -67,6 +67,24 @@ struct RephraseClient {
         return try Self.decoder.decode(RephraseResult.self, from: data)
     }
 
+    /// Languages Google Translate supports. Fails with 503 when the server has no Google key.
+    func translateLanguages() async throws -> [TranslateLanguage] {
+        struct Body: Decodable { let languages: [TranslateLanguage] }
+        let body: Body = try await send("api/translate")
+        return body.languages
+    }
+
+    /// Translates plain text; the source language is detected by Google.
+    func translate(_ body: TranslateRequest) async throws -> TranslateResult {
+        let request = try makeRequest("api/translate", method: "POST", body: body)
+        let (data, response) = try await session.data(for: request)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200..<300).contains(status) else {
+            throw APIError.from(status: status, data: data)
+        }
+        return try Self.decoder.decode(TranslateResult.self, from: data)
+    }
+
     private func makeRequest(_ path: String, method: String, body: (some Encodable)?, authorized: Bool = true) throws -> URLRequest {
         var request = URLRequest(url: baseURL.appending(path: path))
         request.httpMethod = method
@@ -133,6 +151,27 @@ struct RephraseResult: Decodable {
     let model: String?
 }
 
+/// POST /api/translate body. `alternate` is used when the text is already in `target`.
+struct TranslateRequest: Encodable, Equatable {
+    var text: String
+    var target: String
+    var alternate: String?
+}
+
+/// POST /api/translate. `source` is the detected language, `target` the one actually used.
+struct TranslateResult: Decodable, Equatable {
+    let text: String
+    let source: String?
+    let target: String
+}
+
+struct TranslateLanguage: Decodable, Equatable, Identifiable, Hashable {
+    let code: String
+    let name: String
+
+    var id: String { code }
+}
+
 struct LoginResponse: Decodable {
     let token: String
     let expiresAt: Date?
@@ -178,9 +217,11 @@ struct Catalog: Decodable, Equatable {
     /// Set for demo sessions, which have a shorter text limit.
     var demo: Bool?
     var maxChars: Int?
+    /// The server has a Google Translate key. Missing on older servers.
+    var translate: Bool?
 
     enum CodingKeys: String, CodingKey {
-        case models, modes, styles, tones, languages, formats, demo
+        case models, modes, styles, tones, languages, formats, demo, translate
         case defaultModel = "default"
         case maxChars = "max_chars"
     }

@@ -15,6 +15,7 @@ Rephrase tool on Cloudflare Pages: static frontend plus Pages Functions that cal
   - `auth/login.js`, `auth/logout.js`, `auth/me.js`, `auth/demo.js` (passwordless demo session)
   - `models.js` - models available given the configured providers
   - `rephrase.js` - main endpoint, streams SSE
+  - `translate.js` - Google Translate for the macOS ⌃⌥Z shortcut (password sessions only)
 - `functions/lib/` - shared code
   - `auth.js` - HMAC session tokens (cookie or Bearer); demo tokens carry `demo: true`
   - `demo.js` - public demo: Gemma only, shared daily neuron budget and per-visitor limit in D1 (`DEMO_DB`)
@@ -22,6 +23,7 @@ Rephrase tool on Cloudflare Pages: static frontend plus Pages Functions that cal
   - `providers.js` - Anthropic and Workers AI streaming clients
   - `models.js` - model allowlist and prices
   - `http.js` - JSON and CORS helpers
+  - `translate.js` - Google Cloud Translation v2 client (`GOOGLE_TRANSLATE_API_KEY`, sent as `X-Goog-Api-Key`)
 - `macos/` - native macOS app (Swift 6, SwiftUI), see `macos/PLAN.md`
   - `project.yml` - XcodeGen spec; the `.xcodeproj` is generated and git-ignored
   - `Rephrase/` - app sources; `RephraseTests/` - Swift Testing tests
@@ -39,6 +41,7 @@ Rephrase tool on Cloudflare Pages: static frontend plus Pages Functions that cal
 - Model ids are the exact strings from `functions/lib/models.js`. `output_config.effort` is only sent for models that support it.
 - `/api/rephrase` takes `format: "markdown"` (default, web app) or `"plain"` (macOS app, selections from other apps).
 - The frontend sends Markdown and renders Markdown; the diff is computed on plain text and applied to the rendered DOM.
+- Translation is secondary and macOS-only: `/api/models` advertises `translate`, demo sessions are refused, and the web app has no translate UI.
 - Demo sessions must never reach Anthropic or exceed the Workers AI free tier: `rephrase.js` forces `DEMO_MODEL_ID`, skips the fallback and reserves budget via `reserveDemo` before calling the model.
 - Secrets never go in `wrangler.toml`. Local: `.env` (symlink to `local.env`) and `.env.local`. Both are git-ignored; so is `*.env`.
 - macOS app: `cd macos && xcodegen generate`, then build in Xcode or `xcodebuild -scheme Rephrase -derivedDataPath build test`. Add `TEST_RUNNER_REPHRASE_BASE_URL=http://localhost:8788 TEST_RUNNER_APP_PASSWORD=...` to also run the live sign-in test.
