@@ -85,21 +85,18 @@ final class RewriteController {
 
     // MARK: ⌃⌥Z
 
-    /// Translates the selection into the default language (Google detects the source) in a popup.
-    /// Enter replaces the selection, ⌘C copies. Pressing the shortcut again closes it.
+    /// Translates the selection into the default language in a popup, with Google or Apple
+    /// (see `AppModel.translateEngine`). Apple needs no sign-in. Enter replaces, ⌘C copies.
+    /// Pressing the shortcut again closes it.
     func translate() async {
         if popup.isVisible {
             popup.close()
             return
         }
         cancelQuick()
-        guard let selection = await readSelection(report: { [popup] message, bounds in
+        guard let selection = await readSelection(requireSignIn: false, report: { [popup] message, bounds in
             popup.show(.message(message), near: bounds)
         }) else { return }
-        if let reason = translateUnavailableReason {
-            popup.show(.message(reason), near: selection.bounds)
-            return
-        }
 
         let model = makeTranslateModel(text: selection.text)
         if selection.canPaste {
@@ -122,31 +119,18 @@ final class RewriteController {
             popup.show(.message("The clipboard has no text."), near: nil)
             return
         }
-        guard case .signedIn = app.auth else {
-            popup.show(.message(Self.signInMessage), near: nil)
-            return
-        }
-        if let reason = translateUnavailableReason {
-            popup.show(.message(reason), near: nil)
-            return
-        }
         let model = makeTranslateModel(text: text)
         model.copyOnlyReason = "From the clipboard: copy the result."
         popup.show(model, near: nil)
         model.run()
     }
 
-    private var translateUnavailableReason: String? {
-        if app.isDemo { return "Translation isn't part of the demo. Sign in with the password to use it." }
-        if !app.canTranslate { return "Translation isn't set up on \(app.host): the server needs a Google Translate API key." }
-        return nil
-    }
-
     private func makeTranslateModel(text: String) -> TranslateModel {
         let model = TranslateModel(
             original: text,
             options: app.translateOptions,
-            languages: app.translateLanguages,
+            engine: app.translateEngine,
+            languages: app.translateLanguages(for: app.translateEngine),
             makeClient: { [app] in try app.client() }
         )
         model.onClose = { [weak popup] in popup?.close() }
@@ -220,7 +204,7 @@ final class RewriteController {
     private static let notTrustedMessage = "Rephrase isn't allowed yet. In System Settings › Privacy & Security › Accessibility, turn Rephrase on. If it is already on, remove it with − and add it again: each new build needs a fresh grant."
 
     /// Reads the selection and checks sign-in. Problems are shown with `report`; returns nil then.
-    private func readSelection(report: (String, CGRect?) -> Void) async -> Selection? {
+    private func readSelection(requireSignIn: Bool = true, report: (String, CGRect?) -> Void) async -> Selection? {
         guard !reading else { return nil }
         reading = true
         defer { reading = false }
@@ -241,7 +225,7 @@ final class RewriteController {
             report(error.localizedDescription, nil)
             return nil
         }
-        guard case .signedIn = app.auth else {
+        guard !requireSignIn || app.isSignedIn else {
             report(Self.signInMessage, selection.bounds)
             return nil
         }

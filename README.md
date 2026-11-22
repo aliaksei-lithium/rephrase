@@ -27,9 +27,9 @@ Select text in any app and press:
 
 - **⌃⌥C** to see the rewrite in a popup next to it. Change the mode, style, tone or language there, then press Enter to replace the text.
 - **⌃⌥X** to replace it straight away with your default settings. ⌘Z undoes it.
-- **⌃⌥Z** to translate it into your default language in a popup. It remembers the last language you picked.
+- **⌃⌥Z** to translate it into your default language in a popup, with Google Translate or Apple's on-device translation. It remembers the last language you picked.
 
-Open Rephrase to see its window with your setup, the shortcuts, Settings (⌘,) and Sign Out. Shortcuts and the default translate language can be changed in Settings.
+Open Rephrase to see its window with your setup, the shortcuts, Settings (⌘,) and Sign Out. Shortcuts, the default translate language and the translation engine can be changed in Settings.
 
 It needs only the Accessibility permission, to read the selection and paste the result. It never watches what you type.
 
@@ -56,13 +56,13 @@ Paste formatted text from Slack, Gmail or Docs. The result keeps bold, lists, co
 - **Fix** corrects typos, grammar and punctuation only. **Edit** also smooths awkward phrasing. **Rewrite** says it again in more natural words.
 - Optional style (casual, business, academic) and tone (friendly, confident, diplomatic, enthusiastic).
 - Keeps the language of the text, or writes in English or German.
-- Translates into any language with Google Translate (macOS app, signed in with the password).
+- Translates in the macOS app: with Google Translate when signed in with the password, or with Apple's translation on your Mac, which needs no sign-in and keeps the text on the Mac.
 - Claude Sonnet 5 by default; Opus 5, Haiku 4.5 or the free Gemma model on Workers AI are one click away.
 - Runs on your own Cloudflare account behind a password, and keeps no copy of your text.
 
 ## Demo
 
-Anyone can try the [web app](https://rephrase.aliaksei.xyz) or the macOS app without a password. The demo uses only the free Gemma model, takes texts up to 2,000 characters, and has a daily limit shared by everyone, so it may run out before the day ends (it resets at 00:00 UTC). Translation is not part of the demo.
+Anyone can try the [web app](https://rephrase.aliaksei.xyz) or the macOS app without a password. The demo uses only the free Gemma model, takes texts up to 2,000 characters, and has a daily limit shared by everyone, so it may run out before the day ends (it resets at 00:00 UTC). In the demo, the macOS app translates with Apple's on-device translation.
 
 ---
 

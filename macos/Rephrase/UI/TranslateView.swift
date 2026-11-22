@@ -1,4 +1,5 @@
 import SwiftUI
+import Translation
 
 struct TranslateView: View {
     @Bindable var model: TranslateModel
@@ -16,6 +17,9 @@ struct TranslateView: View {
         .frame(width: 440)
         .glassEffect(.regular, in: .rect(cornerRadius: 20))
         .padding(1)
+        .translationTask(model.appleConfiguration) { session in
+            await model.translate(with: session)
+        }
     }
 
     private var header: some View {
@@ -87,6 +91,10 @@ struct TranslateView: View {
 
     private var footer: some View {
         HStack(spacing: 8) {
+            if model.phase == .done && !model.isUnchanged && model.copyOnlyReason == nil {
+                Text(model.engine == .apple ? "Apple, on this Mac" : "Google Translate")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             if model.isUnchanged {
                 Text("Already in \(model.name(of: model.usedTarget))").font(.caption).foregroundStyle(.secondary)
             } else if let reason = model.copyOnlyReason, model.phase == .done {

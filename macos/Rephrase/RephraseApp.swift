@@ -65,12 +65,10 @@ private struct MenuContent: View {
         }
         .globalKeyboardShortcut(.rewriteInPlace)
 
-        if model.canTranslate {
-            Button("Translate Selection…") {
-                Task { await rewriter.translate() }
-            }
-            .globalKeyboardShortcut(.translate)
+        Button("Translate Selection…") {
+            Task { await rewriter.translate() }
         }
+        .globalKeyboardShortcut(.translate)
 
         Divider()
 
@@ -78,10 +76,8 @@ private struct MenuContent: View {
             rewriter.rewriteClipboard()
         }
 
-        if model.canTranslate {
-            Button("Translate Clipboard") {
-                Task { await rewriter.translateClipboard() }
-            }
+        Button("Translate Clipboard") {
+            Task { await rewriter.translateClipboard() }
         }
 
         Divider()
