@@ -16,8 +16,8 @@ settings:
     SWIFT_VERSION: "6.0"
     SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
     SWIFT_APPROACHABLE_CONCURRENCY: YES
-    MARKETING_VERSION: "0.3.1"
-    CURRENT_PROJECT_VERSION: "8"
+    MARKETING_VERSION: "0.4.0"
+    CURRENT_PROJECT_VERSION: "9"
     # Ad-hoc signing until an Apple Development certificate is installed.
     # Accessibility trust is tied to the signature, so switch to a real identity before Phase 3.
     CODE_SIGN_STYLE: Manual

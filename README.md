@@ -29,7 +29,7 @@ Select text in any app and press:
 - **⌃⌥X** to replace it straight away with your default settings. ⌘Z undoes it.
 - **⌃⌥Z** to translate it into your default language in a popup, with Google Translate or Apple's on-device translation. It remembers the last language you picked.
 
-Open Rephrase to see its window with your setup, the shortcuts, Settings (⌘,) and Sign Out. Shortcuts, the default translate language and the translation engine can be changed in Settings.
+Open Rephrase to see its window with your setup, the shortcuts, Settings (⌘,) and Sign Out. Shortcuts, the default translate language, the translation engine and the menu bar icon can be changed in Settings.
 
 It needs only the Accessibility permission, to read the selection and paste the result. It never watches what you type.
 
