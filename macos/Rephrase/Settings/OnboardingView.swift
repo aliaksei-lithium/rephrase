@@ -102,11 +102,20 @@ struct OnboardingView: View {
                 .padding(.leading, 38)
             }
 
+            // The window is the main way into the app (the menu bar icon can be hidden),
+            // so Settings and Quit are here too.
             HStack {
-                Text("Shortcuts can be changed in Settings. Version \(AppInfo.version)")
+                Text("Version \(AppInfo.version)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
+                Button("Quit Rephrase") { NSApp.terminate(nil) }
+                    .keyboardShortcut("q")
+                Button("Settings…") {
+                    NSApp.activate()
+                    openSettings()
+                }
+                .keyboardShortcut(",")
                 Button("Done") {
                     Onboarding.markDone()
                     dismissWindow(id: Onboarding.windowID)
