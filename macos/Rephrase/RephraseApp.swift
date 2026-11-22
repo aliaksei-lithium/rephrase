@@ -4,6 +4,7 @@ import SwiftUI
 @main
 struct RephraseApp: App {
     @State private var model: AppModel
+    @AppStorage(MenuBarIcon.key) private var showMenuBarIcon = true
     private let rewriter: RewriteController
 
     init() {
@@ -17,7 +18,7 @@ struct RephraseApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra("Rephrase", systemImage: "wand.and.sparkles") {
+        MenuBarExtra("Rephrase", systemImage: "wand.and.sparkles", isInserted: $showMenuBarIcon) {
             MenuContent(rewriter: rewriter)
                 .environment(model)
         }
@@ -36,6 +37,10 @@ struct RephraseApp: App {
                 .environment(model)
         }
     }
+}
+
+enum MenuBarIcon {
+    static let key = "showMenuBarIcon"
 }
 
 private struct MenuContent: View {

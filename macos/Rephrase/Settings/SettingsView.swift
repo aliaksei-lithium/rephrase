@@ -67,6 +67,7 @@ private struct GeneralSettings: View {
 
             Section("App") {
                 LaunchAtLoginToggle()
+                MenuBarIconToggle()
                 LabeledContent("Version", value: AppInfo.version)
             }
 
@@ -206,5 +207,16 @@ private struct TranslateSettings: View {
 
     private static func name(_ code: String) -> String {
         Locale.current.localizedString(forLanguageCode: code) ?? code.uppercased()
+    }
+}
+
+private struct MenuBarIconToggle: View {
+    @AppStorage(MenuBarIcon.key) private var show = true
+
+    var body: some View {
+        Toggle(isOn: $show) {
+            Text("Show menu bar icon")
+            Text("The shortcuts still work, and opening Rephrase shows its window with Settings.")
+        }
     }
 }
