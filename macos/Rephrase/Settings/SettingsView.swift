@@ -67,6 +67,7 @@ private struct GeneralSettings: View {
 
             Section("App") {
                 LaunchAtLoginToggle()
+                LabeledContent("Version", value: AppInfo.version)
             }
 
             Section("Defaults") {
@@ -142,8 +143,12 @@ private struct ShortcutSettings: View {
                 KeyboardShortcuts.Recorder("Rewrite and replace", name: .rewriteInPlace)
                 KeyboardShortcuts.Recorder("Translate", name: .translate)
             } footer: {
-                Text("macOS does not allow global shortcuts that use only Option or Option-Shift.")
+                Text("macOS does not allow global shortcuts that use only Option or Option-Shift. The menu bar menu shows the current shortcuts too.")
                     .foregroundStyle(.secondary)
+            }
+
+            Section {
+                LabeledContent("Version", value: AppInfo.version)
             }
         }
         .formStyle(.grouped)
