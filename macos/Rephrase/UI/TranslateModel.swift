@@ -25,6 +25,8 @@ final class TranslateModel {
     var copyOnlyReason: String?
     var onClose: (() -> Void)?
     var onError: ((Error) -> Void)?
+    /// Called with the language picked in the popup, so it becomes the default.
+    var onRetarget: ((String) -> Void)?
 
     private let makeClient: () throws -> RephraseClient
     private var task: Task<Void, Never>?
@@ -72,10 +74,12 @@ final class TranslateModel {
         }
     }
 
-    /// Picking another target in the popup re-runs without the alternate, so the pick is what you get.
+    /// Picking another target in the popup re-runs without the alternate, so the pick is what you get,
+    /// and makes it the default for the next ⌃⌥Z.
     func retarget(_ code: String) {
         guard code != usedTarget else { return }
         options = TranslateOptions(target: code, alternate: nil)
+        onRetarget?(code)
         run()
     }
 
